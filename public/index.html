@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="peek101-version" content="dev">
+<title>Estado de cuenta · Taller 101</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='15' fill='%230080C1'/%3E%3Ctext x='15' y='20' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='12' fill='%23fff'%3E101%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<header class="barra">
+  <div class="logo">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="14" fill="#fff"/><text x="15" y="20" text-anchor="middle" font-family="Raleway,sans-serif" font-weight="700" font-size="12.5" fill="#0080C1">101</text></svg>
+    taller 101
+  </div>
+  <div class="quien" id="quien" hidden><span id="quien-n"></span><button id="salir">Salir</button></div>
+</header>
+
+<!-- ENTRADA · el correo -->
+<section class="login" id="v-correo">
+  <form id="f-correo" novalidate>
+    <div><h1>Estado de cuenta</h1><p>Consulta tus proyectos, pagos y saldo.</p></div>
+    <label for="correo">Tu correo<input type="email" id="correo" autocomplete="username" inputmode="email" enterkeyhint="next" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tu@correo.com" required></label>
+    <div class="err" id="err-correo"></div>
+    <button class="btn" type="submit" id="b-correo">Continuar</button>
+    <p class="nota">Te mandamos un código de 6 dígitos. Si ya tienes PIN, también puedes entrar con él.</p>
+  </form>
+</section>
+
+<!-- ENTRADA · el código o el PIN -->
+<section class="login" id="v-clave" hidden>
+  <form id="f-clave" novalidate>
+    <div><h1 id="clave-t">Tu código</h1><p id="clave-p"></p></div>
+    <label for="clave"><span id="clave-l">Código de 6 dígitos</span>
+      <input type="text" id="clave" class="pin num" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" enterkeyhint="go" required>
+    </label>
+    <div class="err" id="err-clave"></div>
+    <button class="btn" type="submit" id="b-clave">Entrar</button>
+    <div class="opciones">
+      <button type="button" class="volver" id="otro-correo">Usar otro correo</button>
+      <button type="button" class="volver" id="cambiar-modo"></button>
+    </div>
+    <button type="button" class="volver" id="reenviar" hidden>Reenviar el código</button>
+  </form>
+</section>
+
+<div class="wrap" id="v-cargando" hidden><p class="nota">Cargando tu estado de cuenta…</p></div>
+
+<!-- RESUMEN -->
+<main class="wrap" id="v-general" hidden>
+  <div class="cab">
+    <div><p class="eyebrow">Estado de cuenta general</p><h1 id="g-cliente"></h1><div class="sub" id="g-sub"></div></div>
+    <div class="nota">Corte al <span id="g-fecha"></span></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><p class="eyebrow">Proyectos</p><div class="v num" id="g-total"></div><div class="d" id="g-total-d"></div></div>
+    <div class="kpi"><p class="eyebrow">Pagado</p><div class="v num" id="g-pagado"></div><div class="d" id="g-pagado-d"></div></div>
+    <div class="kpi saldo"><p class="eyebrow">Saldo pendiente</p><div class="v num" id="g-saldo"></div><div class="d" id="g-saldo-d"></div></div>
+  </div>
+  <div class="avance">
+    <div class="fila"><span>Avance de fabricación</span><b class="num" id="g-pct"></b></div>
+    <div class="pista"><i id="g-barra" style="width:0"></i></div>
+  </div>
+
+  <div class="cab"><h2>Por proyecto</h2><div class="nota">Toca un proyecto para ver sus productos</div></div>
+  <div class="proys" id="g-proys"></div>
+  <footer>Taller 101 — FORESPOT · Estado de cuenta informativo. Ante cualquier diferencia, aplica el contrato y los recibos emitidos.</footer>
+</main>
+
+<!-- DETALLE -->
+<main class="wrap detalle" id="v-detalle" hidden>
+  <button class="volver" id="volver">← Estado de cuenta general</button>
+  <div class="cab" style="margin-top:14px">
+    <div><p class="eyebrow" id="d-clave"></p><h2 id="d-nombre"></h2><div class="sub" id="d-sub"></div></div>
+    <span class="chip marca" id="d-estado"></span>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><p class="eyebrow">Monto del proyecto</p><div class="v num" id="d-total"></div></div>
+    <div class="kpi"><p class="eyebrow">Pagado</p><div class="v num" id="d-pagado"></div><div class="d" id="d-pagado-d"></div></div>
+    <div class="kpi saldo"><p class="eyebrow">Saldo</p><div class="v num" id="d-saldo"></div></div>
+    <div class="kpi"><p class="eyebrow">Entrega acordada</p><div class="v" id="d-entrega" style="font-size:20px"></div><div class="d" id="d-entrega-d"></div></div>
+  </div>
+  <div class="avance">
+    <div class="fila"><span>Avance de fabricación</span><b class="num" id="d-pct"></b></div>
+    <div class="pista"><i id="d-barra" style="width:0"></i></div>
+  </div>
+
+  <div class="cab"><h2 style="font-size:18px">Productos del proyecto</h2></div>
+  <div class="tabla"><table>
+    <thead><tr><th>Producto</th><th>Etapa</th><th>Entrega acordada</th><th class="r">Monto</th></tr></thead>
+    <tbody id="d-items"></tbody>
+  </table></div>
+  <div class="leyenda">
+    <span><i style="background:var(--marca)"></i> etapa cumplida</span>
+    <span><i style="background:var(--ok)"></i> cerrado (aceptado por ti)</span>
+    <span><i style="background:var(--pista)"></i> pendiente</span>
+    <span id="d-etapas-nota"></span>
+  </div>
+
+  <div class="movs">
+    <h3>Pagos recibidos</h3>
+    <div class="tabla"><table>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Monto</th></tr></thead>
+      <tbody id="d-pagos"></tbody>
+    </table></div>
+  </div>
+  <footer>Taller 101 — FORESPOT · Estado de cuenta informativo. Ante cualquier diferencia, aplica el contrato y los recibos emitidos.</footer>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

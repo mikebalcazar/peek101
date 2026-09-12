@@ -1,0 +1,151 @@
+/* peek101 — la hoja de estilo del portal del cliente.
+ *
+ * Es la del portal v0 (dash101/portal/index.html, 7-sep), separada del HTML
+ * y sin cambios de identidad: azul #0080C1, Raleway para el texto, Sansation
+ * para la marca, Fira Sans para las cifras. Las fuentes viajan dentro; nada
+ * se pide a Google. Ver claude/tipografia-cifras-suite101.md de dash101.
+ *
+ * Van TRES pesos de Raleway, no cinco. El v0 declaraba también el 500 y el
+ * 800: al 500 no lo usaba ninguna regla, y al 800 sólo el «101» del
+ * logotipo, que ahora va en 700 y se ve igual. Eran 40 KB que el navegador
+ * bajaba en cada primera carga para dibujar tres dígitos. Medido con el
+ * navegador: la pantalla de entrada pasó de 200.0 KB a 160.0 KB.
+ * Lo que sigue pesando son los tres pesos que sí se usan (119 KB): para
+ * bajarlos habría que subconjuntar Raleway como ya está subconjuntada Fira,
+ * y eso se anota en el README, no se promete aquí. */
+
+@font-face{font-family:"Cifras";src:url("fonts/fira-cifras-400.woff2") format("woff2");font-weight:400 500;font-display:swap;unicode-range:U+0030-0039,U+00B0,U+00B1,U+00D7,U+0025}
+@font-face{font-family:"Cifras";src:url("fonts/fira-cifras-600.woff2") format("woff2");font-weight:600 900;font-display:swap;unicode-range:U+0030-0039,U+00B0,U+00B1,U+00D7,U+0025}
+@font-face{font-family:"Raleway";src:url("fonts/raleway-400.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Raleway";src:url("fonts/raleway-600.woff2") format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Raleway";src:url("fonts/raleway-700.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Sansation";src:url("fonts/sansation-700.woff2") format("woff2");font-weight:700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Sansation";src:url("fonts/sansation-700-ext.woff2") format("woff2");font-weight:700;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+:root{
+  --marca:#0080C1; --marca-2:#3AA3DC; --marca-oscuro:#122733;
+  --fondo:#F3F6F8; --sup:#FFFFFF; --sup-2:#E9EEF2; --linea:#D5DDE3;
+  --tinta:#152028; --tinta-2:#4B5A66; --tinta-3:#7F8C97;
+  --ok:#2E9E6B; --aviso:#C8813A; --alerta:#C9694A;
+  --pista:#DDE5EA;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fondo:#0F171D; --sup:#172229; --sup-2:#1F2C35; --linea:#2C3B46;
+    --tinta:#EEF3F6; --tinta-2:#B3C0CA; --tinta-3:#7F919E; --pista:#2A3842;
+    --marca-oscuro:#0B1A24;
+  }
+}
+:root[data-theme="dark"]{
+  --fondo:#0F171D; --sup:#172229; --sup-2:#1F2C35; --linea:#2C3B46;
+  --tinta:#EEF3F6; --tinta-2:#B3C0CA; --tinta-3:#7F919E; --pista:#2A3842;
+  --marca-oscuro:#0B1A24;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:"Cifras","Raleway","Segoe UI",Helvetica,Arial,sans-serif;font-variant-numeric:lining-nums;font-size:15px;line-height:1.45}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+button{font:inherit;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);font-weight:600}
+
+/* barra */
+.barra{background:var(--marca);color:#fff;height:56px;display:flex;align-items:center;padding:0 22px;gap:14px}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Sansation","Raleway",sans-serif;font-weight:700;letter-spacing:-.02em;font-size:17px}
+.logo svg{display:block}
+.barra .quien{margin-left:auto;font-size:13px;opacity:.92;display:flex;gap:14px;align-items:center;min-width:0}
+.barra .quien span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barra .quien button{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;padding:5px 11px;font-size:12.5px;font-weight:600;flex-shrink:0}
+.barra .quien button:hover{background:rgba(255,255,255,.14)}
+
+.wrap{max-width:1040px;margin:0 auto;padding:26px 22px 60px}
+[hidden]{display:none!important}
+
+/* entrada */
+.login{min-height:calc(100vh - 56px);display:grid;place-items:center;padding:30px 18px}
+.login form{background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:34px 32px;width:min(400px,100%);display:grid;gap:16px}
+.login h1{font-size:22px}
+.login p{margin:0;color:var(--tinta-2);font-size:14px}
+label{display:grid;gap:6px;font-size:12.5px;font-weight:600;color:var(--tinta-2)}
+input{font:inherit;padding:11px 12px;border:1px solid var(--linea);border-radius:7px;background:var(--fondo);color:var(--tinta);width:100%}
+input:focus{outline:2px solid var(--marca-2);outline-offset:1px;border-color:var(--marca)}
+input.pin{letter-spacing:.45em;font-size:20px;font-weight:600;text-align:center}
+.btn{background:var(--marca);color:#fff;border:0;border-radius:7px;padding:12px;font-weight:700;font-size:15px}
+.btn:hover{background:#0071AA}
+.btn:disabled{opacity:.6;cursor:default}
+.btn:focus-visible{outline:2px solid var(--marca-2);outline-offset:2px}
+.err{color:var(--alerta);font-size:13px;min-height:1.2em}
+.err.bien{color:var(--ok)}
+.nota{font-size:12px;color:var(--tinta-3)}
+.opciones{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+/* encabezado sección */
+.cab{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.cab h1{font-size:24px}
+.cab h2{font-size:22px}
+.cab .sub{color:var(--tinta-2);font-size:14px;margin-top:3px}
+.volver{background:none;border:0;color:var(--marca);font-weight:600;padding:0;font-size:14px}
+.volver:hover{text-decoration:underline}
+
+/* resumen */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--linea);border:1px solid var(--linea);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.kpi{background:var(--sup);padding:18px 20px;min-width:0}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:6px;line-height:1.1;overflow-wrap:anywhere}
+.kpi .d{font-size:12.5px;color:var(--tinta-3);margin-top:5px}
+.kpi.saldo .v{color:var(--marca)}
+.avance{background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:14px 20px;display:grid;gap:8px;margin-bottom:30px}
+.avance .fila{display:flex;justify-content:space-between;font-size:13px;color:var(--tinta-2)}
+.pista{height:10px;background:var(--pista);border-radius:5px;overflow:hidden}
+.pista i{display:block;height:100%;background:var(--marca);border-radius:5px}
+.pista.fina{height:6px}
+
+/* lista proyectos */
+.proys{display:grid;gap:10px}
+.proy{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 130px;gap:16px;align-items:center;background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:16px 20px;text-align:left;color:inherit;width:100%}
+.proy:hover{border-color:var(--marca-2)}
+.proy:focus-visible{outline:2px solid var(--marca-2);outline-offset:2px}
+.proy .n{font-weight:700;font-size:15.5px}
+.proy .m{font-size:12.5px;color:var(--tinta-3);margin-top:2px}
+.proy .c{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);font-weight:600}
+.proy .val{font-weight:600;margin-top:2px}
+.proy .pct{font-size:12.5px;color:var(--tinta-2);margin-top:4px}
+.proy .flecha{color:var(--marca);font-weight:700;justify-self:end}
+.chip{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:12px;background:var(--sup-2);color:var(--tinta-2)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.chip.marca{background:color-mix(in srgb,var(--marca) 14%,transparent);color:var(--marca)}
+.chip.aviso{background:color-mix(in srgb,var(--aviso) 18%,transparent);color:var(--aviso)}
+
+/* detalle */
+.detalle .kpis{grid-template-columns:repeat(4,1fr)}
+.tabla{background:var(--sup);border:1px solid var(--linea);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);font-weight:600;padding:12px 14px;border-bottom:1px solid var(--linea);background:var(--sup-2)}
+td{padding:13px 14px;border-bottom:1px solid var(--linea);vertical-align:middle;font-size:14px}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.item-n{font-weight:600}
+.item-m{font-size:12px;color:var(--tinta-3)}
+.etapa{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.etapa .pasos{display:flex;gap:2px}
+.etapa .pasos i{width:9px;height:9px;border-radius:2px;background:var(--pista)}
+.etapa .pasos i.on{background:var(--marca)}
+.etapa .pasos i.fin{background:var(--ok)}
+.fecha{white-space:nowrap}
+.fecha.tarde{color:var(--alerta);font-weight:600}
+.leyenda{font-size:12px;color:var(--tinta-3);margin-top:14px;display:flex;gap:18px;flex-wrap:wrap}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.leyenda i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+.movs{margin-top:30px}
+.movs h3{font-size:15px;margin-bottom:10px}
+.movs table{min-width:520px}
+
+footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
+@media (max-width:760px){
+  .kpis,.detalle .kpis{grid-template-columns:1fr 1fr}
+  .kpi .v{font-size:22px}
+  .proy{grid-template-columns:1fr 1fr;row-gap:10px}
+  .proy .flecha{display:none}
+  .wrap{padding:20px 16px 50px}
+  .barra{padding:0 16px}
+}
+@media (prefers-reduced-motion:no-preference){.pista i{transition:width .5s ease}}
