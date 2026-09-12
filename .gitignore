@@ -1,0 +1,4 @@
+node_modules/
+.wrangler/
+# Lo que dejan las pruebas de Playwright: capturas y trazas de una corrida.
+pruebas/salida/
