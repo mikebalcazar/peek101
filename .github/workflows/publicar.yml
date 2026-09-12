@@ -62,7 +62,26 @@ jobs:
           [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || falta="$falta CLOUDFLARE_API_TOKEN"
           [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || falta="$falta CLOUDFLARE_ACCOUNT_ID"
           if [ -n "$falta" ]; then
-            echo "::error::Faltan secretos del repositorio peek101:$falta. Los pone Mike en Settings ▸ Secrets and variables ▸ Actions; son los mismos que ya tienen suite101-api y dash101. El token necesita Workers Scripts:Edit, Account Settings:Read y User Details:Read."
+            # El aviso va TAMBIÉN al archivo que se pega al comentario del
+            # commit. La primera corrida (12-sep) murió justo aquí y el
+            # comentario sólo dijo «el flujo se cayó antes de medir»: cierto,
+            # pero inútil. El log de Actions no lo alcanza el chat, así que un
+            # `::error::` que sólo vive ahí no le sirve a nadie.
+            {
+              echo "FALTA CON QUÉ PUBLICAR"
+              echo
+              echo "Secretos que el repositorio peek101 no tiene:$falta"
+              echo
+              echo "Los pone Mike, una sola vez, en:"
+              echo "  github.com/mikebalcazar/peek101/settings/secrets/actions"
+              echo "Son los MISMOS valores que ya tienen suite101-api y dash101."
+              echo "El token necesita Workers Scripts:Edit, Account Settings:Read"
+              echo "y User Details:Read."
+              echo
+              echo "No se publico nada. El chat no lee ni lista secretos: solo"
+              echo "pregunta si estan, y este renglon es la respuesta."
+            } | tee /tmp/medido-staging.txt
+            echo "::error::Faltan secretos del repositorio peek101:$falta. Los pone Mike en Settings - Secrets and variables - Actions; son los mismos que ya tienen suite101-api y dash101."
             exit 1
           fi
           echo "los dos secretos están puestos"
