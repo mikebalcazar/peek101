@@ -73,6 +73,11 @@ input.pin{letter-spacing:.45em;font-size:20px;font-weight:600;text-align:center}
 .btn:hover{background:#0071AA}
 .btn:disabled{opacity:.6;cursor:default}
 .btn:focus-visible{outline:2px solid var(--marca-2);outline-offset:2px}
+.btn.suave{background:#fff;color:var(--marca);border:1px solid var(--marca)}
+.btn.suave:hover{background:#f2f8fc}
+/* «o con tu cuenta de Google»: una raya a cada lado del texto */
+.o-bien{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tinta-3)}
+.o-bien::before,.o-bien::after{content:"";flex:1;height:1px;background:rgba(0,0,0,.12)}
 .err{color:var(--alerta);font-size:13px;min-height:1.2em}
 .err.bien{color:var(--ok)}
 .nota{font-size:12px;color:var(--tinta-3)}
