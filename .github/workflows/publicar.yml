@@ -94,6 +94,14 @@ jobs:
           done
           echo "todos los archivos pasan node --check"
 
+      # La entrada, medida sin red y sin navegador: qué ofrece la pantalla, qué
+      # ya no ofrece, y que cada id que el JS busca exista en el HTML. Esta app
+      # no se empaqueta —el HTML y el JS se sirven tal cual—, así que un id que
+      # ya no existe no truena al armar ni al cargar: truena cuando alguien le
+      # pica al botón. Va antes de publicar nada, porque no necesita nada.
+      - name: Qué ofrece la pantalla de entrada
+        run: node pruebas/entrada.mjs
+
       - name: Sellar la portada con este commit
         run: node scripts/sellar.mjs "${{ github.sha }}"
 

@@ -1,9 +1,14 @@
 /* El portal, manejado con un navegador de verdad.
  *
- * Entra como el cliente «Familia Ramírez» de la org `demo` de STAGING (D6),
- * usando el `codigo_prueba` que la API devuelve fuera de producción, y
+ * Entra como el cliente «Familia Ramírez» de la org `demo` de STAGING (D6) y
  * comprueba que lo pintado coincide con el JSON —no que «se vea bien»—:
  * cuenta productos, suma pagos y compara contra `totales`.
+ *
+ * DESDE EL 16-SEP-2026 entra por donde entra un cliente de verdad la primera
+ * vez, que es el camino que la homologación dejó: «Olvidé mi contraseña» →
+ * código al correo → poner la contraseña → adentro. Y después SALE y vuelve a
+ * entrar con esa contraseña, que es lo que hará todos los días. Antes entraba
+ * con el código y ya; ese camino ya no existe en la pantalla.
  *
  * Corre a 390 × 844 (un celular, que es de donde el cliente lo abre) y a
  * 1440. Contra el banco de pruebas por omisión, o contra lo publicado si se
@@ -21,6 +26,11 @@ import { ETAPAS as ETAPAS_SUPERVISOR } from '../public/textos.js';
 
 const BASE = (process.env.BASE || 'http://127.0.0.1:8789').replace(/\/$/, '');
 const CORREO = process.env.CORREO_DEMO || 'familia.ramirez@ejemplo.mx';
+/* La contraseña que esta prueba le pone al cliente de `demo`. Lleva el número
+ * de la corrida para que dos corridas a la vez no se peleen, y para que la de
+ * hoy no dependa de lo que dejó la de ayer: el bloque que la pone entra por
+ * «Olvidé mi contraseña», así que no necesita saber la anterior. */
+const CLAVE = `peek-${process.env.GITHUB_RUN_ID || Date.now()}-mirlo`;
 const EJECUTABLE = process.env.CHROMIUM || undefined;
 
 let fallas = 0, revisadas = 0;
@@ -57,7 +67,12 @@ async function codigoNuevo(intentos = 4) {
 }
 
 /** Lo que la API le contesta a este cliente, pedido por fuera del navegador:
- *  es contra esto que se compara lo pintado. */
+ *  es contra esto que se compara lo pintado.
+ *
+ *  Aquí sí se usa el código, y no es una inconsistencia: esto no pasa por la
+ *  pantalla. La API sigue aceptando el código —es la recuperación— y pedirlo
+ *  por fuera es la manera más corta de tener una sesión con la que leer el
+ *  JSON de referencia. */
 async function desdeLaApi() {
   const codigo = await codigoNuevo();
   const entra = await fetch(`${BASE}/s101/auth/entrar`, {
@@ -87,15 +102,31 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   await pagina.waitForSelector('#v-correo:not([hidden])', { timeout: 15000 });
   rev(true, 'la entrada abre pidiendo el correo');
 
-  // Entrar como lo haría el cliente: correo, y el código que le llega. El
-  // código se lee de la respuesta que pidió LA PROPIA INTERFAZ, no de una
-  // petición aparte: pedir otro invalidaría éste, que es justo lo que pasó la
-  // primera vez que corrió esta prueba.
+  // El correo ya no dispara un código: lleva a la contraseña.
   await pagina.fill('#correo', CORREO);
+  await pagina.click('#b-correo');
+  await pagina.waitForSelector('#v-clave:not([hidden])', { timeout: 15000 });
+  rev(true, 'el correo lleva a la contraseña, no a un código');
+
+  // Una contraseña equivocada tiene que decirlo con palabras del cliente, y
+  // decirlo IGUAL que un correo sin portal: distinguirlos le diría a cualquiera
+  // qué correos tienen portal aquí. Es la prueba de control: si el error se
+  // tragara, esto pasaría a estar vacío.
+  await pagina.fill('#clave', 'la-que-no-es-99');
+  await pagina.click('#b-clave');
+  await pagina.waitForFunction(() => document.getElementById('err-clave').textContent.trim().length > 0, null, { timeout: 15000 });
+  const aviso = (await pagina.textContent('#err-clave')).trim();
+  rev(/no coinciden/i.test(aviso), 'una contraseña equivocada se dice con palabras del cliente', aviso);
+  rev(!/\b(4\d\d|5\d\d|clave_invalida|sin_permiso)\b/.test(aviso), 'y sin códigos de programador en pantalla');
+
+  /* «Olvidé mi contraseña», que es por donde entra un cliente la primera vez.
+   * El código se lee de la respuesta que pidió LA PROPIA INTERFAZ, no de una
+   * petición aparte: pedir otro invalidaría éste, que es justo lo que pasó la
+   * primera vez que corrió esta prueba. */
   let codigo = null;
   for (let i = 0; i < 4 && !codigo; i++) {
     const espera = pagina.waitForResponse((r) => r.url().endsWith('/s101/auth/codigo'), { timeout: 20000 });
-    await pagina.click('#b-correo');
+    await pagina.click('#olvide');
     const cuerpo = await (await espera).json().catch(() => null);
     codigo = cuerpo?.data?.codigo_prueba ?? null;
     if (!codigo) {
@@ -105,22 +136,58 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
     }
   }
   if (!codigo) throw new Error('la interfaz no consiguió un código de prueba');
+  await pagina.waitForSelector('#v-codigo:not([hidden])', { timeout: 15000 });
+  rev(true, '«Olvidé mi contraseña» manda un código y pide teclearlo');
+
+  await pagina.fill('#codigo', '000000');
+  await pagina.click('#b-codigo');
+  await pagina.waitForFunction(() => document.getElementById('err-codigo').textContent.trim().length > 0, null, { timeout: 15000 });
+  const avisoCod = (await pagina.textContent('#err-codigo')).trim();
+  rev(/no es/i.test(avisoCod), 'un código equivocado se dice con palabras y dice cuántos intentos quedan', avisoCod);
+
+  await pagina.fill('#codigo', codigo);
+  await pagina.click('#b-codigo');
+
+  /* Con el código bueno NO entra al resumen: entra a ponerse una contraseña.
+   * Ese código es de un solo uso y de diez minutos, así que dejarlo pasar sin
+   * contraseña sería dejarlo sin manera de volver mañana. */
+  await pagina.waitForSelector('#v-nueva:not([hidden])', { timeout: 20000 });
+  rev(true, 'con el código bueno se le pide poner una contraseña, no se le deja pasar');
+
+  // Una débil se rechaza, y la suite dice por qué con palabras.
+  await pagina.fill('#nueva', '1234567890');
+  await pagina.fill('#nueva2', '1234567890');
+  await pagina.click('#b-nueva');
+  await pagina.waitForFunction(() => document.getElementById('err-nueva').textContent.trim().length > 0, null, { timeout: 15000 });
+  const avisoDebil = (await pagina.textContent('#err-nueva')).trim();
+  rev(avisoDebil.length > 0 && !/\b(4\d\d|clave_debil)\b/.test(avisoDebil),
+    'una contraseña floja se rechaza con palabras, no con un código', avisoDebil);
+
+  // Dos que no coinciden tampoco pasan, y no se dice cuál falló.
+  await pagina.fill('#nueva', CLAVE);
+  await pagina.fill('#nueva2', `${CLAVE}-no`);
+  await pagina.click('#b-nueva');
+  await pagina.waitForFunction(() => /coincidieron/i.test(document.getElementById('err-nueva').textContent), null, { timeout: 15000 });
+  rev(true, 'dos que no coinciden se rechazan sin decir cuál de las dos falló');
+
+  await pagina.fill('#nueva', CLAVE);
+  await pagina.fill('#nueva2', CLAVE);
+  await pagina.click('#b-nueva');
+  await pagina.waitForSelector('#v-general:not([hidden])', { timeout: 20000 });
+  rev(true, 'con la contraseña puesta entra al resumen');
+
+  /* Y AHORA LO QUE HARÁ TODOS LOS DÍAS: salir y volver a entrar con ella. Sin
+   * esto, la prueba mediría el camino de una vez en la vida y no el de siempre.
+   * Es la mitad que faltaba. */
+  await pagina.click('#salir');
+  await pagina.waitForSelector('#v-correo:not([hidden])', { timeout: 15000 });
+  await pagina.fill('#correo', CORREO);
+  await pagina.click('#b-correo');
   await pagina.waitForSelector('#v-clave:not([hidden])', { timeout: 15000 });
-
-  // Un código equivocado tiene que decirlo con palabras, y decir cuántos
-  // intentos quedan. Es la prueba de control: si el error se tragara, esto
-  // pasaría a estar vacío.
-  await pagina.fill('#clave', '000000');
-  await pagina.click('#b-clave');
-  await pagina.waitForFunction(() => document.getElementById('err-clave').textContent.trim().length > 0, null, { timeout: 15000 });
-  const aviso = (await pagina.textContent('#err-clave')).trim();
-  rev(/no es/i.test(aviso), 'un código equivocado se dice con palabras del cliente', aviso);
-  rev(!/\b(4\d\d|5\d\d|codigo_invalido)\b/.test(aviso), 'y sin códigos de programador en pantalla');
-
-  await pagina.fill('#clave', codigo);
+  await pagina.fill('#clave', CLAVE);
   await pagina.click('#b-clave');
   await pagina.waitForSelector('#v-general:not([hidden])', { timeout: 20000 });
-  rev(true, 'con el código bueno entra al resumen');
+  rev(true, 'sale, vuelve a entrar con su contraseña y no le piden nada más');
 
   // Las cifras de la pantalla contra las de la API.
   const mx = (c) => '$' + ((c ?? 0) / 100).toLocaleString('es-MX', { maximumFractionDigits: 0 });

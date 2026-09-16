@@ -72,28 +72,38 @@ async function pedir(ruta, opciones = {}) {
 let DATOS = null;     // lo que devolvió /peek
 let ORG = null;       // la empresa del cliente, de /yo
 let correo = '';
-let modo = 'codigo';  // 'codigo' | 'pin'
 
 function mostrar(cual) {
-  for (const v of ['v-correo', 'v-clave', 'v-cargando', 'v-general', 'v-detalle']) $(v).hidden = v !== cual;
+  for (const v of ['v-correo', 'v-clave', 'v-codigo', 'v-nueva', 'v-cargando', 'v-general', 'v-detalle']) $(v).hidden = v !== cual;
   window.scrollTo(0, 0);
 }
 
 /* ─────────────── entrada ─────────────── */
 
 function pintarClave() {
-  const esCodigo = modo === 'codigo';
-  $('clave-t').textContent = esCodigo ? 'Tu código' : 'Tu PIN';
-  $('clave-p').textContent = esCodigo ? `Te lo mandamos a ${correo}. Vence en 10 minutos.` : `Del portal de ${correo}.`;
-  $('clave-l').textContent = esCodigo ? 'Código de 6 dígitos' : 'PIN de 6 dígitos';
-  $('clave').type = esCodigo ? 'text' : 'password';
-  $('clave').autocomplete = esCodigo ? 'one-time-code' : 'current-password';
-  $('cambiar-modo').textContent = esCodigo ? 'Entrar con mi PIN' : 'Mandarme un código';
-  $('reenviar').hidden = !esCodigo;
+  $('clave-p').textContent = `La de tu cuenta, ${correo}.`;
   $('clave').value = '';
   $('err-clave').textContent = '';
   $('err-clave').classList.remove('bien');
   $('clave').focus();
+}
+
+function pintarCodigo() {
+  $('codigo-p').textContent = `Te lo mandamos a ${correo}. Vence en 10 minutos.`;
+  $('codigo').value = '';
+  $('err-codigo').textContent = '';
+  $('err-codigo').classList.remove('bien');
+  $('codigo').focus();
+}
+
+function pintarNueva(primera) {
+  $('nueva-t').textContent = primera ? 'Ponle una contraseña' : 'Tu contraseña nueva';
+  $('nueva-p').textContent = primera
+    ? 'Con ella entras de ahora en adelante, aquí y en las demás apps de la suite.'
+    : 'Tecléala dos veces; la segunda, de memoria.';
+  $('nueva').value = ''; $('nueva2').value = '';
+  $('err-nueva').textContent = '';
+  $('nueva').focus();
 }
 
 $('f-correo').onsubmit = async (ev) => {
@@ -102,17 +112,14 @@ $('f-correo').onsubmit = async (ev) => {
   if (!/^\S+@\S+\.\S+$/.test(c)) { $('err-correo').textContent = 'Escribe un correo válido.'; return; }
   correo = c;
   $('err-correo').textContent = '';
-  const b = $('b-correo'); b.disabled = true; b.textContent = 'Mandando…';
-  try {
-    await pedirCodigo();
-    modo = 'codigo';
-    mostrar('v-clave');
-    pintarClave();
-  } catch (e) {
-    // Que el correo no tenga portal se dice aquí, no después de teclear un
-    // código que nunca iba a servir.
-    $('err-correo').textContent = e.message;
-  } finally { b.disabled = false; b.textContent = 'Continuar'; }
+  /* Ya no se pide un código aquí. Se pasa a la contraseña, y NO se le pregunta
+   * a la API si esta persona tiene una: eso volvería esta pantalla un
+   * directorio de quién tiene portal. Antes se avisaba en este paso que un
+   * correo no tenía portal; ahora eso se sabe al intentar entrar, que es donde
+   * la API decide, y con el mismo mensaje para un correo que no existe y para
+   * una contraseña equivocada. */
+  mostrar('v-clave');
+  pintarClave();
 };
 
 async function pedirCodigo() {
@@ -124,12 +131,48 @@ async function pedirCodigo() {
 
 $('f-clave').onsubmit = async (ev) => {
   ev.preventDefault();
-  const v = $('clave').value.trim();
-  if (!/^\d{6}$/.test(v)) { $('err-clave').textContent = modo === 'codigo' ? 'El código son 6 dígitos.' : 'El PIN son 6 dígitos.'; return; }
+  // La contraseña NO se recorta: un espacio al principio o al final es parte
+  // de ella, y la suite rechaza esas al ponerlas. Recortarla aquí haría que
+  // una contraseña buena no entrara y nadie sabría por qué.
+  const v = $('clave').value;
+  if (!v) { $('err-clave').textContent = 'Escribe tu contraseña.'; return; }
   const b = $('b-clave'); b.disabled = true; b.textContent = 'Entrando…';
   $('err-clave').textContent = '';
   try {
-    await pedir('/auth/entrar', { method: 'POST', body: modo === 'codigo' ? { correo, codigo: v } : { correo, pin: v } });
+    await pedir('/auth/entrar', { method: 'POST', body: { correo, clave: v } });
+    await entrar();
+  } catch (e) {
+    /* `sin_permiso` es el correo que no tiene portal y `clave_invalida` la
+     * contraseña equivocada. Se dicen IGUAL a propósito: distinguirlos le
+     * diría a cualquiera qué correos tienen portal aquí. */
+    $('err-clave').textContent = e.error === 'sin_permiso' || e.error === 'clave_invalida'
+      ? 'Ese correo y esa contraseña no coinciden.'
+      : e.message;
+    $('clave').value = '';
+    $('clave').focus();
+  } finally { b.disabled = false; b.textContent = 'Entrar'; }
+};
+
+/* «Olvidé mi contraseña», que es la misma puerta para quien nunca tuvo una. */
+$('olvide').onclick = async () => {
+  const b = $('olvide'); b.disabled = true; b.textContent = 'Mandando…';
+  $('err-clave').textContent = '';
+  try {
+    await pedirCodigo();
+    mostrar('v-codigo');
+    pintarCodigo();
+  } catch (e) { $('err-clave').textContent = e.message; }
+  finally { b.disabled = false; b.textContent = 'Olvidé mi contraseña'; }
+};
+
+$('f-codigo').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const v = $('codigo').value.trim();
+  if (!/^\d{6}$/.test(v)) { $('err-codigo').textContent = 'El código son 6 dígitos.'; return; }
+  const b = $('b-codigo'); b.disabled = true; b.textContent = 'Entrando…';
+  $('err-codigo').textContent = '';
+  try {
+    await pedir('/auth/entrar', { method: 'POST', body: { correo, codigo: v } });
     await entrar();
   } catch (e) {
     let msg = e.message;
@@ -137,10 +180,34 @@ $('f-clave').onsubmit = async (ev) => {
     if (e.error === 'codigo_invalido' && typeof quedan === 'number') {
       msg = quedan > 0 ? `Ese código no es. Te quedan ${quedan} ${quedan === 1 ? 'intento' : 'intentos'}.` : 'Ese código no es y se acabaron los intentos. Pide uno nuevo.';
     }
-    $('err-clave').textContent = msg;
-    $('clave').value = '';
-    $('clave').focus();
-  } finally { b.disabled = false; b.textContent = 'Entrar'; }
+    $('err-codigo').textContent = msg;
+    $('codigo').value = '';
+    $('codigo').focus();
+  } finally { b.disabled = false; b.textContent = 'Continuar'; }
+};
+
+$('f-nueva').onsubmit = async (ev) => {
+  ev.preventDefault();
+  const a = $('nueva').value, c = $('nueva2').value;
+  if (a.length < 10) { $('err-nueva').textContent = 'La contraseña necesita al menos 10 caracteres.'; return; }
+  if (a !== c) {
+    // No se dice cuál falló ni se deja la primera puesta: si no coincidieron,
+    // una de las dos está mal y no hay forma de saber cuál.
+    $('err-nueva').textContent = 'No coincidieron. Vamos otra vez, desde el principio.';
+    $('nueva').value = ''; $('nueva2').value = ''; $('nueva').focus();
+    return;
+  }
+  const b = $('b-nueva'); b.disabled = true; b.textContent = 'Guardando…';
+  $('err-nueva').textContent = '';
+  try {
+    await pedir('/auth/clave', { method: 'POST', body: { clave: a } });
+    await entrar();
+  } catch (e) {
+    // La suite dice con palabras por qué una contraseña no pasa. Se enseña tal
+    // cual: es más útil que «contraseña inválida».
+    $('err-nueva').textContent = e.detalle?.porque || e.message;
+    $('nueva').value = ''; $('nueva2').value = ''; $('nueva').focus();
+  } finally { b.disabled = false; b.textContent = 'Guardar y entrar'; }
 };
 
 /* ─────────────── entrar con Google ───────────────
@@ -166,32 +233,29 @@ $('b-google').onclick = async () => {
   }
 };
 
-$('cambiar-modo').onclick = async () => {
-  if (modo === 'codigo') { modo = 'pin'; pintarClave(); return; }
-  modo = 'codigo';
-  try { await pedirCodigo(); pintarClave(); }
-  catch (e) { modo = 'pin'; $('err-clave').textContent = e.message; }
-};
-
 $('reenviar').onclick = async () => {
   const b = $('reenviar'); b.disabled = true;
   try {
     await pedirCodigo();
-    $('err-clave').classList.add('bien');
-    $('err-clave').textContent = 'Te mandamos otro código.';
-  } catch (e) { $('err-clave').classList.remove('bien'); $('err-clave').textContent = e.message; }
+    $('err-codigo').classList.add('bien');
+    $('err-codigo').textContent = 'Te mandamos otro código.';
+  } catch (e) { $('err-codigo').classList.remove('bien'); $('err-codigo').textContent = e.message; }
   finally { b.disabled = false; }
 };
 
 // Volver al correo limpia el aviso rojo: si se queda pegado parece que la
 // pantalla nueva ya falló. Es el mismo arreglo que roster101 el 12-sep.
-$('otro-correo').onclick = () => {
-  $('err-correo').textContent = '';
-  $('err-clave').textContent = '';
-  $('clave').value = '';
+function alCorreo() {
+  for (const e of ['err-correo', 'err-clave', 'err-codigo', 'err-nueva']) {
+    $(e).textContent = ''; $(e).classList.remove('bien');
+  }
+  $('clave').value = ''; $('codigo').value = '';
+  $('nueva').value = ''; $('nueva2').value = '';
   mostrar('v-correo');
   $('correo').focus();
-};
+}
+$('otro-correo').onclick = alCorreo;
+$('otro-correo-2').onclick = alCorreo;
 
 $('salir').onclick = async () => {
   try { await pedir('/auth/salir', { method: 'POST' }); } catch { /* la sesión ya no estaba */ }
@@ -208,6 +272,18 @@ async function entrar() {
     const yo = await pedir('/yo');
     if (!yo.acceso || yo.acceso.tipo !== 'cliente') throw new ErrorApi('sin_permiso', 403);
     if (!yo.acceso.activo) throw new ErrorApi('sin_permiso', 403);
+
+    /* Entró con un código y no tiene contraseña: no tiene por dónde volver
+     * mañana, porque el código es de un solo uso y de diez minutos. Se le pide
+     * antes de enseñarle nada. Con Google NO se le pide: Google ya es una
+     * forma de entrar, y pedirle una contraseña a quien no la necesita es un
+     * estorbo. */
+    if (!yo.tiene_clave && yo.entro_con === 'codigo') {
+      mostrar('v-nueva');
+      pintarNueva(true);
+      return;
+    }
+
     ORG = yo.acceso.org_id;
     DATOS = await pedir(`/orgs/${encodeURIComponent(ORG)}/peek`);
     $('quien-n').textContent = yo.usuario.correo;
