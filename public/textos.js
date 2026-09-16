@@ -50,4 +50,7 @@ export const ERRORES = {
   correo_no_configurado: 'El envío de códigos no está disponible ahora. Intenta más tarde.',
   datos_invalidos: 'Revisa lo que escribiste.',
   no_encontrado: 'No encontramos tu estado de cuenta. Pide a tu taller que revise tu acceso.',
+  google_no_configurado: 'Entrar con Google todavía no está prendido. Entra con tu correo.',
+  origen_no_permitido: 'Esta dirección no está dada de alta para entrar con Google. Entra con tu correo.',
+  entrada_invalida: 'El boleto de Google ya no sirve. Vuelve a intentar.',
 };

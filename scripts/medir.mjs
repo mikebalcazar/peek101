@@ -64,6 +64,7 @@ async function traer(base, ruta, { method = 'GET', body, cabeceras = {}, galleta
     estado: r.status, ms: Date.now() - t0,
     tipo: r.headers.get('content-type') || '',
     puesta: r.headers.get('set-cookie') || '',
+    ubicacion: r.headers.get('location') || '',
     bytes: texto.length, texto, cuerpo,
   };
 }
@@ -113,6 +114,16 @@ async function elEnlace(base, entornoEsperado, quien) {
   linea(`       contrato ${d.contrato}  ·  versión ${d.version}  ·  D1 ${d.d1}`);
   const raiz = await traer(base, '/s101');
   rev(raiz.cuerpo?.servicio === 'suite101-api', `${quien}: /s101 a secas cae en la raíz de la API`, `${raiz.estado}`);
+  // Entrar con Google pasa por el mismo proxy. Sin llaves en la API: 501; con
+  // ellas: 302 a accounts.google.com, y entonces Google tiene que devolver a
+  // la API (URL_PUBLICA), nunca a este dominio, que sólo sirve /s101/*.
+  const g = await traer(base, `/s101/auth/google?volver_a=${encodeURIComponent(base + '/')}`);
+  const aGoogle = g.estado === 302 && String(g.ubicacion).startsWith('https://accounts.google.com/');
+  rev(g.estado === 501 || aGoogle, `${quien}: /s101/auth/google pasa la puerta del origen`, aGoogle ? 'Google prendido: 302 a accounts.google.com' : `${g.estado} ${g.cuerpo?.error ?? ''}`);
+  if (aGoogle) {
+    const destino = new URL(g.ubicacion).searchParams.get('redirect_uri');
+    rev(/^https:\/\/suite101-api(-staging)?\.mike-929\.workers\.dev\/auth\/google\/callback$/.test(String(destino)), `${quien}: Google devuelve a la API, no a peek101`, String(destino));
+  }
 }
 
 /* ─────────────── producción: mirar, no tocar ─────────────── */
