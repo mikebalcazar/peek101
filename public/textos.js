@@ -1,6 +1,6 @@
 /* Los textos que la API no manda y que conviene tener en un solo lugar.
  *
- * Las siete etapas son las de SUPERVISOR, sin cambios, tal como las lista
+ * Las siete etapas son las del taller (nacieron en SUPERVISOR, que se retiró el 18-sep-2026), tal como las lista
  * `suite101-api/claude/suite101-arquitectura.md` §«Las 7 etapas»
  * (medido el 12-sep-2026). `etapa` llega de la API como un entero de 0 a 7:
  * 0 es «todavía no arranca» y 7 es «el cliente aceptó». La `clave` (M07)
