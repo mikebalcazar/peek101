@@ -423,6 +423,12 @@ $('volver').onclick = () => { pintarGeneral(); mostrar('v-general'); };
     await pedir('/yo');
     await entrar();
   } catch {
-    mostrar('v-correo');
+    /* La cookie no vive: se pide el correo, pero SÓLO si el cliente no se
+     * adelantó. Con red lenta, /yo contesta después de que ya tecleó su correo
+     * y está en la contraseña, y regresarlo a la primera pantalla es un rebote
+     * que nadie entiende: el botón «Olvidé mi contraseña» desaparecía debajo
+     * del dedo. Medido el 18-sep-2026 desde el sandbox, donde /yo tarda ~700
+     * ms; en el runner contesta antes de que nadie teclee y por eso no se veía. */
+    if (!correo) mostrar('v-correo');
   }
 })();

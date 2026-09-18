@@ -148,33 +148,58 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   await pagina.fill('#codigo', codigo);
   await pagina.click('#b-codigo');
 
-  /* Con el código bueno NO entra al resumen: entra a ponerse una contraseña.
-   * Ese código es de un solo uso y de diez minutos, así que dejarlo pasar sin
-   * contraseña sería dejarlo sin manera de volver mañana. */
-  await pagina.waitForSelector('#v-nueva:not([hidden])', { timeout: 20000 });
-  rev(true, 'con el código bueno se le pide poner una contraseña, no se le deja pasar');
+  /* Con el código bueno hay dos destinos, y los dos son correctos:
+   *  - Si el cliente NO tiene contraseña (la primera vez en su vida), la
+   *    pantalla lo manda a ponerse una y no lo deja pasar: ese código es de
+   *    un solo uso y de diez minutos, y dejarlo pasar sin contraseña sería
+   *    dejarlo sin manera de volver mañana.
+   *  - Si ya tiene, entra al resumen. La pantalla no lo obliga a cambiarla.
+   * En esta prueba el segundo caso es el normal: la pantalla de celular le
+   * pone contraseña al cliente de `demo` y la de computadora ya lo encuentra
+   * con ella; y desde la segunda corrida, las dos. Medido el 18-sep-2026: la
+   * primera versión esperaba #v-nueva siempre y se quedó colgada en la
+   * segunda pantalla (run 35292567882). */
+  await pagina.waitForSelector('#v-nueva:not([hidden]), #v-general:not([hidden])', { timeout: 20000 });
+  if (await pagina.isVisible('#v-nueva')) {
+    rev(true, 'sin contraseña todavía: con el código bueno se le pide poner una, no se le deja pasar');
 
-  // Una débil se rechaza, y la suite dice por qué con palabras.
-  await pagina.fill('#nueva', '1234567890');
-  await pagina.fill('#nueva2', '1234567890');
-  await pagina.click('#b-nueva');
-  await pagina.waitForFunction(() => document.getElementById('err-nueva').textContent.trim().length > 0, null, { timeout: 15000 });
-  const avisoDebil = (await pagina.textContent('#err-nueva')).trim();
-  rev(avisoDebil.length > 0 && !/\b(4\d\d|clave_debil)\b/.test(avisoDebil),
-    'una contraseña floja se rechaza con palabras, no con un código', avisoDebil);
+    // Una débil se rechaza, y la suite dice por qué con palabras.
+    await pagina.fill('#nueva', '1234567890');
+    await pagina.fill('#nueva2', '1234567890');
+    await pagina.click('#b-nueva');
+    await pagina.waitForFunction(() => document.getElementById('err-nueva').textContent.trim().length > 0, null, { timeout: 15000 });
+    const avisoDebil = (await pagina.textContent('#err-nueva')).trim();
+    rev(avisoDebil.length > 0 && !/\b(4\d\d|clave_debil)\b/.test(avisoDebil),
+      'una contraseña floja se rechaza con palabras, no con un código', avisoDebil);
 
-  // Dos que no coinciden tampoco pasan, y no se dice cuál falló.
-  await pagina.fill('#nueva', CLAVE);
-  await pagina.fill('#nueva2', `${CLAVE}-no`);
-  await pagina.click('#b-nueva');
-  await pagina.waitForFunction(() => /coincidieron/i.test(document.getElementById('err-nueva').textContent), null, { timeout: 15000 });
-  rev(true, 'dos que no coinciden se rechazan sin decir cuál de las dos falló');
+    // Dos que no coinciden tampoco pasan, y no se dice cuál falló.
+    await pagina.fill('#nueva', CLAVE);
+    await pagina.fill('#nueva2', `${CLAVE}-no`);
+    await pagina.click('#b-nueva');
+    await pagina.waitForFunction(() => /coincidieron/i.test(document.getElementById('err-nueva').textContent), null, { timeout: 15000 });
+    rev(true, 'dos que no coinciden se rechazan sin decir cuál de las dos falló');
 
-  await pagina.fill('#nueva', CLAVE);
-  await pagina.fill('#nueva2', CLAVE);
-  await pagina.click('#b-nueva');
-  await pagina.waitForSelector('#v-general:not([hidden])', { timeout: 20000 });
-  rev(true, 'con la contraseña puesta entra al resumen');
+    await pagina.fill('#nueva', CLAVE);
+    await pagina.fill('#nueva2', CLAVE);
+    await pagina.click('#b-nueva');
+    await pagina.waitForSelector('#v-general:not([hidden])', { timeout: 20000 });
+    rev(true, 'con la contraseña puesta entra al resumen');
+  } else {
+    rev(true, 'ya tenía contraseña: con el código bueno entra al resumen sin que le pidan otra');
+
+    /* Para medir abajo el camino de todos los días con la contraseña de ESTA
+     * corrida, se le pone por la API desde la misma pestaña (misma galleta).
+     * La sesión se abrió con código, así que la API no pide la anterior
+     * (`/auth/clave`: `actual` sólo cuando se entró con contraseña). */
+    const puesta = await pagina.evaluate(async (clave) => {
+      const r = await fetch('/s101/auth/clave', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clave }),
+      });
+      return { status: r.status, cuerpo: await r.json().catch(() => null) };
+    }, CLAVE);
+    rev(puesta.status === 200 && puesta.cuerpo?.ok === true,
+      'y la contraseña de esta corrida se le pone por la API sin pedir la anterior', `${puesta.status} ${puesta.cuerpo?.error ?? ''}`);
+  }
 
   /* Y AHORA LO QUE HARÁ TODOS LOS DÍAS: salir y volver a entrar con ella. Sin
    * esto, la prueba mediría el camino de una vez en la vida y no el de siempre.
@@ -284,11 +309,33 @@ async function google(navegador) {
   await ctx.close();
 }
 
+/** Con red lenta, /yo contesta después de que el cliente ya tecleó su correo.
+ *  La pantalla NO debe regresarlo a la primera vista cuando por fin llega el
+ *  401. Pasó de verdad el 18-sep-2026 (desde el sandbox, donde /yo tarda ~700
+ *  ms): el botón «Olvidé mi contraseña» desaparecía debajo del dedo. Aquí la
+ *  demora se fabrica, para que se mida igual en cualquier red. */
+async function yoLento(navegador) {
+  console.log(`\n== /yo tarda en contestar ==  ${BASE}`);
+  const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-MX' });
+  const pagina = await ctx.newPage();
+  await pagina.route('**/s101/yo', async (ruta) => { await dormir(2500); await ruta.continue(); });
+  await pagina.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await pagina.waitForSelector('#v-correo:not([hidden])', { timeout: 15000 });
+  await pagina.fill('#correo', CORREO);
+  await pagina.click('#b-correo');
+  await pagina.waitForSelector('#v-clave:not([hidden])', { timeout: 15000 });
+  await dormir(3500); // para cuando ya llegó el 401 tardío
+  rev(await pagina.isVisible('#v-clave') && await pagina.isVisible('#olvide'),
+    'el 401 tardío de /yo no regresa al cliente a la pantalla del correo');
+  await ctx.close();
+}
+
 const navegador = await chromium.launch(EJECUTABLE ? { executablePath: EJECUTABLE } : {});
 try {
   await correr(navegador, 390, 844, 'celular', datos);
   await correr(navegador, 1440, 900, 'computadora', datos);
   await google(navegador);
+  await yoLento(navegador);
 } finally {
   await navegador.close();
 }

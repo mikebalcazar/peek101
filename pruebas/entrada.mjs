@@ -39,10 +39,17 @@ const sinComentarios = (t) => t
 const js = sinComentarios(jsCrudo);
 const htmlSinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
 
-console.log('\n· el cableado: cada id que el JS busca existe en el HTML');
+console.log('\n· el cableado: cada id que el JS busca existe en algún lado');
+/* No todos los ids viven en el HTML: varios los pinta el propio JS con
+ * `innerHTML` y luego los cablea. La primera versión de esta prueba sólo miraba
+ * el HTML y reportó `a-ver-empresas` y `a-ver-gente` de master101 como
+ * faltantes — y no faltaban, los crea el JS tres renglones antes de usarlos. Se
+ * revisó antes de "arreglar" nada: el defecto era de la prueba. Así que un id
+ * vale si está en el HTML o si el propio JS lo escribe. */
 const usados = [...new Set([...js.matchAll(/\$\('([a-z0-9-]+)'\)/g)].map((m) => m[1]))].sort();
-const faltantes = usados.filter((id) => !new RegExp(`id="${id}"`).test(html));
-rev(faltantes.length === 0, `los ${usados.length} ids que usa app.js están en el HTML`,
+const faltantes = usados.filter((id) =>
+  !new RegExp(`id="${id}"`).test(html) && !new RegExp(`id="${id}"`).test(js));
+rev(faltantes.length === 0, `los ${usados.length} ids que usa app.js están en el HTML o los pinta el JS`,
   faltantes.length ? `faltan: ${faltantes.join(', ')}` : '');
 
 /* Y al revés, sólo para las vistas: una vista que el HTML trae y `mostrar()` no
@@ -82,5 +89,7 @@ rev(!/!yo\.tiene_clave\s*\)/.test(js), 'y a quien entró con Google no se le pid
  * sabría por qué. */
 rev(/const v = \$\('clave'\)\.value;/.test(js), 'la contraseña se manda tal cual, sin recortarla');
 
-console.log(`\n${fallas ? 'FALLAS' : 'todo bien'}: ${revisadas - fallas}/${revisadas}\n`);
+// El marcador dice cuántas pasaron, no cuántas fallaron: la primera versión
+// imprimía «FALLAS: 13/15» con 13 buenas, que se lee exactamente al revés.
+console.log(`\n${fallas ? `${fallas} FALLA${fallas > 1 ? 'S' : ''}` : 'todo bien'} · ${revisadas - fallas} de ${revisadas} pasaron\n`);
 process.exit(fallas ? 1 : 0);
