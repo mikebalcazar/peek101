@@ -45,6 +45,7 @@ export const ERRORES = {
   sin_permiso: 'Ese correo no tiene portal. Pide a tu taller que te lo active.',
   sin_sesion: 'Tu sesión terminó. Vuelve a entrar.',
   org_inactiva: 'La cuenta de tu taller está pausada. Pregúntales a ellos.',
+  org_sin_pago: 'La cuenta de tu taller no está al corriente. Pregúntales a ellos.',
   app_inactiva: 'Tu taller no tiene el portal activo. Pregúntales a ellos.',
   usuario_desconocido: 'Ese correo no tiene portal. Pide a tu taller que te lo active.',
   correo_no_configurado: 'El envío de códigos no está disponible ahora. Intenta más tarde.',
