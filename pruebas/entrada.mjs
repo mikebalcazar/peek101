@@ -77,11 +77,12 @@ rev(!/one-time-code/.test(htmlSinComentarios.split('id="v-codigo"')[0]),
   'la primera pantalla ya no pide un código de un solo uso');
 
 console.log('\n· la contraseña obligatoria después del código');
-/* Quien entra con un código y no tiene contraseña no tiene por dónde volver
- * mañana: el código es de un solo uso y de diez minutos. Con Google no se le
- * pide, porque Google ya es una forma de entrar. */
-rev(/!yo\.tiene_clave\s*&&\s*yo\.entro_con\s*===\s*'codigo'/.test(js),
-  'se le pide poner contraseña a quien entró con código y no tiene');
+/* Quien entra con un código y no tiene contraseña NI Google ligado no tiene
+ * por dónde volver mañana: el código es de un solo uso y de diez minutos. Con
+ * Google no se le pide, ni al entrar con él ni después con un código, porque
+ * Google ya es una forma de entrar (contrato 0.17.2, `tiene_google`). */
+rev(/!yo\.tiene_clave\s*&&\s*!yo\.tiene_google\s*&&\s*yo\.entro_con\s*===\s*'codigo'/.test(js),
+  'se le pide poner contraseña a quien entró con código y no tiene contraseña ni Google');
 rev(!/!yo\.tiene_clave\s*\)/.test(js), 'y a quien entró con Google no se le pide (guarda)');
 
 /* La contraseña NO se recorta al mandarla: un espacio al principio o al final

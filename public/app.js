@@ -278,7 +278,10 @@ async function entrar() {
      * antes de enseñarle nada. Con Google NO se le pide: Google ya es una
      * forma de entrar, y pedirle una contraseña a quien no la necesita es un
      * estorbo. */
-    if (!yo.tiene_clave && yo.entro_con === 'codigo') {
+  // 0.17.2: con Google ligado no se le pide contraseña, ni al entrar con él ni
+  // después con un código: Google ya es una forma de volver. Una API vieja no
+  // manda `tiene_google` y entonces esto se comporta como antes.
+    if (!yo.tiene_clave && !yo.tiene_google && yo.entro_con === 'codigo') {
       mostrar('v-nueva');
       pintarNueva(true);
       return;
