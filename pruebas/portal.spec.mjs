@@ -260,11 +260,15 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
         'y el estado de cuenta no trae nada de proveedores');
 
     if (t.iva > 0) {
+      /* CON CENTAVOS: el resto del portal enseña pesos redondos, pero el
+       * desglose no puede. Con «IVA incluido» el subtotal casi nunca es
+       * redondo y, redondeado, los tres renglones no suman. */
+      const mx2 = (c) => '$' + ((c ?? 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       await pagina.waitForSelector('#d-desglose:not([hidden])', { timeout: 15000 });
-      rev((await pagina.textContent('#d-subtotal')).trim() === mx(t.subtotal), 'el subtotal pintado es el del servidor');
-      rev((await pagina.textContent('#d-iva')).trim() === mx(t.iva), 'el IVA pintado es el del servidor');
-      rev((await pagina.textContent('#d-gran-total')).trim() === mx(t.total), 'el total pintado es el del servidor');
-      rev((await pagina.textContent('#d-total')).trim() === mx(t.total), 'y el KPI de arriba también trae el total con IVA');
+      rev((await pagina.textContent('#d-subtotal')).trim() === mx2(t.subtotal), 'el subtotal pintado es el del servidor, al centavo');
+      rev((await pagina.textContent('#d-iva')).trim() === mx2(t.iva), 'el IVA pintado es el del servidor, al centavo');
+      rev((await pagina.textContent('#d-gran-total')).trim() === mx2(t.total), 'el total pintado es el del servidor, al centavo');
+      rev((await pagina.textContent('#d-total')).trim() === mx2(t.total), 'y el KPI de arriba también trae el total con IVA');
       rev(/Generado el/.test(await pagina.textContent('#d-generado')), 'dice el día en que se generó');
     }
 
