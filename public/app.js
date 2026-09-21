@@ -396,10 +396,57 @@ function pintarDetalle(i) {
     : '<tr><td colspan="3" class="nota">Sin pagos registrados.</td></tr>')
     + `<tr><td colspan="2"><b>Total pagado</b></td><td class="r num"><b>${pesos(pagos.reduce((s, x) => s + (x.monto ?? 0), 0))}</b></td></tr>`;
 
+  // La liga del Excel se puede poner enseguida: es la misma dirección
+  // siempre. El desglose necesita una vuelta más y llega solo.
+  $('d-excel').href = `${API}/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(p.id)}/estado.xlsx`;
+  ponerDesglose(p.id);
+
   mostrar('v-detalle');
 }
 
+/* ─────────────── el desglose fiscal, del servidor ───────────────
+ *
+ * Mike, 21-sep: «necesito poder exportar un estado de cuenta en pdf y un
+ * excel (…). Creo que esto es lo mismo que el cliente podría descargar desde
+ * peek101». Tenía razón, y por eso esto NO SE CALCULA AQUÍ: sale de la misma
+ * ruta que arma el documento del taller, así el papel que él manda y el que
+ * baja el cliente no se pueden contradecir.
+ *
+ * Llega después de pintar y no antes para que el detalle se vea enseguida:
+ * el desglose es un renglón más, no la pantalla. Y si la llamada falla, el
+ * bloque simplemente no se enseña —la lista y los pagos, que es lo que el
+ * cliente viene a ver, ya están—. Un portal que se queda en blanco porque no
+ * pudo pintar el IVA es peor que uno sin IVA.
+ */
+async function ponerDesglose(proyecto_id) {
+  const caja = $('d-desglose');
+  caja.hidden = true;
+  $('d-generado').textContent = '';
+  try {
+    const e = await pedir(`/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(proyecto_id)}/estado`);
+    const t = e.totales ?? {};
+    // Sin IVA que enseñar —una obra al 0 %— el desglose sobra: tres renglones
+    // que dicen el mismo número no aclaran nada.
+    if (!t.iva) return;
+    $('d-subtotal').textContent = pesos(t.subtotal);
+    $('d-iva-et').textContent = `IVA ${(t.tasa_iva ?? 1600) / 100} %`;
+    $('d-iva').textContent = pesos(t.iva);
+    $('d-gran-total').textContent = pesos(t.total);
+    // El total y el saldo son los del documento: con IVA, que es lo que se
+    // paga. Los de arriba venían sin él y decían otra cosa.
+    $('d-total').textContent = pesos(t.total);
+    $('d-saldo').textContent = pesos(t.saldo);
+    $('d-generado').textContent = `Generado el ${fechaLarga(new Date(e.generado_at))}`;
+    caja.hidden = false;
+  } catch {
+    /* Sin desglose. Lo demás ya está pintado. */
+  }
+}
+
 $('volver').onclick = () => { pintarGeneral(); mostrar('v-general'); };
+/* El PDF lo hace el navegador, como en dash101: los estilos de `@media
+ * print` quitan la barra y los botones, y dejan el documento. */
+$('d-pdf').onclick = () => window.print();
 
 /* ─────────────── arranque ───────────────
  * Si la cookie todavía vive, se entra directo: el cliente no vuelve a teclear

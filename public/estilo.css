@@ -144,6 +144,32 @@ td.r,th.r{text-align:right}
 .movs h3{font-size:15px;margin-bottom:10px}
 .movs table{min-width:520px}
 
+/* El desglose fiscal del proyecto: subtotal, IVA y total.
+   Pegado a la derecha como en una factura, porque así se lee. */
+.desglose{margin-top:18px;margin-left:auto;max-width:320px;font-size:14px}
+.desglose .fila{display:flex;justify-content:space-between;gap:20px;padding:5px 0}
+.desglose .total{border-top:1px solid var(--pista);margin-top:4px;padding-top:8px;font-size:16px}
+
+/* Bajarlo: las dos maneras que pidió Mike. */
+.bajar{margin-top:26px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn-bajar{display:inline-block;border:1px solid var(--pista);border-radius:12px;
+  padding:9px 14px;font-size:14px;color:var(--tinta-2);background:#fff;cursor:pointer;
+  text-decoration:none;font-family:inherit}
+.btn-bajar:hover{border-color:var(--tinta-3)}
+.bajar .nota{margin:0;font-size:12px;color:var(--tinta-3)}
+
+/* En papel: se va lo de navegar y se queda el documento. El cliente hace su
+   PDF con «Imprimir → Guardar como PDF», igual que el taller. */
+@media print{
+  .barra,.volver,.bajar,.leyenda{display:none !important}
+  body{background:#fff}
+  .wrap{padding:0}
+  /* Un renglón partido entre dos hojas es un renglón que alguien va a leer mal. */
+  tr,.kpi,.desglose{break-inside:avoid}
+  .tabla{overflow:visible}
+  table{min-width:0 !important}
+}
+
 footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
 @media (max-width:760px){
   .kpis,.detalle .kpis{grid-template-columns:1fr 1fr}

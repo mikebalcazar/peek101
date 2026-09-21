@@ -139,12 +139,31 @@
     <span id="d-etapas-nota"></span>
   </div>
 
+  <!-- El desglose fiscal. Sale de la MISMA ruta que usa el taller para
+       armar el estado de cuenta, así que el papel que él manda y el que
+       baja el cliente dicen lo mismo. Si la obra va sin IVA desglosado,
+       este bloque no se enseña. -->
+  <div class="desglose" id="d-desglose" hidden>
+    <div class="fila"><span>Subtotal</span><b class="num" id="d-subtotal"></b></div>
+    <div class="fila"><span id="d-iva-et">IVA</span><b class="num" id="d-iva"></b></div>
+    <div class="fila total"><span>Total</span><b class="num" id="d-gran-total"></b></div>
+  </div>
+
   <div class="movs">
     <h3>Pagos recibidos</h3>
     <div class="tabla"><table>
       <thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Monto</th></tr></thead>
       <tbody id="d-pagos"></tbody>
     </table></div>
+  </div>
+
+  <!-- Las dos maneras de llevárselo. El PDF lo hace el navegador —Imprimir
+       → Guardar como PDF— y el Excel lo arma la API, el mismo archivo que
+       baja el taller. -->
+  <div class="bajar" id="d-bajar">
+    <a class="btn-bajar" id="d-excel" download>Bajar en Excel</a>
+    <button type="button" class="btn-bajar" id="d-pdf">Guardar como PDF</button>
+    <p class="nota" id="d-generado"></p>
   </div>
   <footer>Taller 101 — FORESPOT · Estado de cuenta informativo. Ante cualquier diferencia, aplica el contrato y los recibos emitidos.</footer>
 </main>

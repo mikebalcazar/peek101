@@ -238,6 +238,49 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   const sumaPintada = (await pagina.textContent('#d-pagos tr:last-child td:last-child')).trim();
   rev(sumaPintada === mx(pagosDelProyecto.reduce((s, x) => s + x.monto, 0)), 'el total pagado es la suma de los pagos pintados', sumaPintada);
 
+  /* El desglose fiscal y las dos maneras de llevárselo (encargo de Mike del
+   * 21-sep). Lo que se mide no es que el bloque aparezca: es que los números
+   * pintados sean EXACTAMENTE los del servidor. Este papel lo manda también
+   * el taller desde dash101, y si las dos caras no dijeran lo mismo, el que
+   * lo notaría es el cliente. */
+  const estado = await pagina.evaluate(async (pid) => {
+    const r = await fetch(`/s101/orgs/demo/proyectos/${pid}/estado`, { credentials: 'include' });
+    const j = await r.json();
+    return j?.ok ? j.data : null;
+  }, p.id);
+  rev(!!estado, 'el cliente puede abrir el estado de cuenta de SU proyecto');
+
+  if (estado) {
+    const t = estado.totales;
+    rev(t.subtotal + t.iva === t.total, 'subtotal + IVA = total, al centavo',
+        `${t.subtotal} + ${t.iva} = ${t.total}`);
+    const sumaItems = estado.items.reduce((a, i) => a + i.importe, 0);
+    rev(sumaItems === t.subtotal, 'la suma de la lista ES el subtotal', `${sumaItems} vs ${t.subtotal}`);
+    rev(!JSON.stringify(estado).match(/pagado_prov|compromiso|proveedor/i),
+        'y el estado de cuenta no trae nada de proveedores');
+
+    if (t.iva > 0) {
+      await pagina.waitForSelector('#d-desglose:not([hidden])', { timeout: 15000 });
+      rev((await pagina.textContent('#d-subtotal')).trim() === mx(t.subtotal), 'el subtotal pintado es el del servidor');
+      rev((await pagina.textContent('#d-iva')).trim() === mx(t.iva), 'el IVA pintado es el del servidor');
+      rev((await pagina.textContent('#d-gran-total')).trim() === mx(t.total), 'el total pintado es el del servidor');
+      rev((await pagina.textContent('#d-total')).trim() === mx(t.total), 'y el KPI de arriba también trae el total con IVA');
+      rev(/Generado el/.test(await pagina.textContent('#d-generado')), 'dice el día en que se generó');
+    }
+
+    // El Excel: que la liga apunte a donde debe y que del otro lado salga un
+    // archivo de verdad. El armador vive en la API y sus pruebas están allá.
+    const liga = await pagina.getAttribute('#d-excel', 'href');
+    rev(liga.endsWith(`/proyectos/${p.id}/estado.xlsx`), 'la liga del Excel apunta a la ruta de la API', liga);
+    const excel = await pagina.evaluate(async (u) => {
+      const r = await fetch(u, { credentials: 'include' });
+      const b = new Uint8Array(await r.arrayBuffer());
+      return { estado: r.status, tipo: r.headers.get('content-type'), pk: b[0] === 0x50 && b[1] === 0x4b, bytes: b.byteLength };
+    }, liga);
+    rev(excel.estado === 200 && excel.pk && excel.bytes > 500,
+        'y baja un .xlsx de verdad', `${excel.estado}, ${excel.bytes} bytes, ${excel.tipo}`);
+  }
+
   // La etapa: el nombre que se enseña es el de SUPERVISOR, no uno inventado.
   const etapas = await pagina.locator('#d-items .etapa span:last-child').allTextContents();
   // Las siete de SUPERVISOR, más los dos extremos, que describen un hecho y
