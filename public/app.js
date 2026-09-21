@@ -29,6 +29,17 @@ const HOY = new Date(); HOY.setHours(0, 0, 0, 0);
 const pesos = (centavos) =>
   '$' + ((centavos ?? 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+/** Con centavos, sólo para el desglose fiscal del estado de cuenta.
+ *
+ *  El portal enseña el dinero en pesos redondos a propósito: el cliente
+ *  quiere saber cuánto lleva, no auditar. Pero el desglose es otra cosa: con
+ *  «IVA incluido» el subtotal casi nunca es redondo —de $111,250 salen
+ *  $95,905.17 y $15,344.83—, y redondeado se leería «95,905 + 15,345 =
+ *  111,250», que no cuadra. En un papel que alguien va a pagar, tres
+ *  renglones que no suman no son un detalle de formato. */
+const pesos2 = (centavos) =>
+  '$' + ((centavos ?? 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /** `avance` viene de 0 a 1 (se midió en staging el 12-sep: 0.4642857… para
  *  13 de 28 etapas). Se dibuja como porcentaje entero. */
 const pct = (fraccion) => Math.round((fraccion ?? 0) * 100);
@@ -428,14 +439,14 @@ async function ponerDesglose(proyecto_id) {
     // Sin IVA que enseñar —una obra al 0 %— el desglose sobra: tres renglones
     // que dicen el mismo número no aclaran nada.
     if (!t.iva) return;
-    $('d-subtotal').textContent = pesos(t.subtotal);
+    $('d-subtotal').textContent = pesos2(t.subtotal);
     $('d-iva-et').textContent = `IVA ${(t.tasa_iva ?? 1600) / 100} %`;
-    $('d-iva').textContent = pesos(t.iva);
-    $('d-gran-total').textContent = pesos(t.total);
+    $('d-iva').textContent = pesos2(t.iva);
+    $('d-gran-total').textContent = pesos2(t.total);
     // El total y el saldo son los del documento: con IVA, que es lo que se
     // paga. Los de arriba venían sin él y decían otra cosa.
-    $('d-total').textContent = pesos(t.total);
-    $('d-saldo').textContent = pesos(t.saldo);
+    $('d-total').textContent = pesos2(t.total);
+    $('d-saldo').textContent = pesos2(t.saldo);
     $('d-generado').textContent = `Generado el ${fechaLarga(new Date(e.generado_at))}`;
     caja.hidden = false;
   } catch {
