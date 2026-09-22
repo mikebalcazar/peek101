@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "previo": "wrangler dev --env staging",
-    "prueba": "node pruebas/entrada.mjs && node pruebas/portal.spec.mjs",
+    "prueba": "node pruebas/entrada.mjs && node pruebas/el-atras.mjs && node pruebas/portal.spec.mjs",
     "medir": "node scripts/medir.mjs"
   },
   "devDependencies": {
