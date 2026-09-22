@@ -17,6 +17,7 @@
  * proveedores, egresos. */
 
 import { ERRORES, ESTADOS, ETAPAS, nombreEtapa } from './textos.js';
+import { irA, sellar, alRetroceder } from './navegar.js';
 
 const API = '/s101';
 const $ = (id) => document.getElementById(id);
@@ -88,6 +89,22 @@ function mostrar(cual) {
   for (const v of ['v-correo', 'v-clave', 'v-codigo', 'v-nueva', 'v-cargando', 'v-general', 'v-detalle']) $(v).hidden = v !== cual;
   window.scrollTo(0, 0);
 }
+
+/* EL «ATRÁS» DEL NAVEGADOR (Mike, 22-sep-2026).
+ *
+ * Antes, abrir un proyecto sólo cambiaba qué div estaba escondido: para el
+ * navegador no pasaba nada, así que «atrás» sacaba del portal y el cliente
+ * perdía la sesión de vista.
+ *
+ * Dos honduras bastan aquí: la lista de proyectos y el detalle de uno. Las
+ * pantallas de entrada —correo, contraseña, código— no cuentan: son pasos
+ * de un trámite, y dejar que «atrás» los recorra invita a meterse a medio
+ * camino con el código ya gastado. */
+const HONDURA = { general: 1, detalle: 2 };
+/* Quién pinta cada hondura cuando el navegador retrocede. La lista se
+ * repinta a propósito: los números pudieron cambiar mientras el cliente
+ * miraba el detalle. */
+alRetroceder((h) => { if (h <= HONDURA.general) { pintarGeneral(); mostrar('v-general'); } });
 
 /* ─────────────── entrada ─────────────── */
 
@@ -304,6 +321,7 @@ async function entrar() {
     $('quien').hidden = false;
     pintarGeneral();
     mostrar('v-general');
+    sellar(HONDURA.general);
   } catch (e) {
     $('err-clave').textContent = e.message;
     mostrar(correo ? 'v-clave' : 'v-correo');
@@ -412,7 +430,7 @@ function pintarDetalle(i) {
   $('d-excel').href = `${API}/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(p.id)}/estado.xlsx`;
   ponerDesglose(p.id);
 
-  mostrar('v-detalle');
+  irA(HONDURA.detalle, () => mostrar('v-detalle'));
 }
 
 /* ─────────────── el desglose fiscal, del servidor ───────────────
@@ -454,7 +472,10 @@ async function ponerDesglose(proyecto_id) {
   }
 }
 
-$('volver').onclick = () => { pintarGeneral(); mostrar('v-general'); };
+/* «Volver» retrocede de verdad en vez de sólo cambiar de pantalla: si
+ * escribiera una entrada nueva, el siguiente «atrás» reabriría el proyecto
+ * que el cliente acaba de cerrar. */
+$('volver').onclick = () => irA(HONDURA.general, () => { pintarGeneral(); mostrar('v-general'); });
 /* El PDF lo hace el navegador, como en dash101: los estilos de `@media
  * print` quitan la barra y los botones, y dejan el documento. */
 $('d-pdf').onclick = () => window.print();
