@@ -12,6 +12,14 @@ name = "peek101"
 main = "worker/index.js"
 compatibility_date = "2026-09-01"
 
+# Desde el 25-sep-2026 el portal vive también en peek101.taller101.com: el DNS
+# de taller101.com está en Cloudflare (Mike lo movió ese día) y el Worker se
+# cuelga del dominio como *custom domain*: Cloudflare pone el registro y el
+# certificado; aquí no hay IPs. La dirección en workers.dev sigue viva.
+routes = [
+  { pattern = "peek101.taller101.com", custom_domain = true }
+]
+
 # La interfaz, tal cual está en `public/`: un HTML, un JS, un CSS y las
 # fuentes. Sin empaquetador. `run_worker_first` deja que `/s101/*` llegue al
 # Worker antes de que los assets contesten con un 404 o con el index.html.
@@ -35,6 +43,8 @@ enabled = true
 
 [env.staging]
 name = "peek101-staging"
+# `routes` se hereda del nivel de arriba; staging NO se cuelga del dominio.
+routes = []
 
 [env.staging.assets]
 directory = "./public"
