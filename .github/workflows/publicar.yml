@@ -102,6 +102,11 @@ jobs:
       - name: Qué ofrece la pantalla de entrada
         run: node pruebas/entrada.mjs
 
+      # El letrero de versión nueva (30-sep-2026): que la página lo cargue,
+      # que pida /huella.txt, y que sellar.mjs deje la huella. Sin red.
+      - name: El letrero de versión nueva
+        run: node pruebas/la-version-nueva.mjs
+
       - name: Sellar la portada con este commit
         run: node scripts/sellar.mjs "${{ github.sha }}"
 
