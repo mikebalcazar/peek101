@@ -2,3 +2,5 @@ node_modules/
 .wrangler/
 # Lo que dejan las pruebas de Playwright: capturas y trazas de una corrida.
 pruebas/salida/
+# la deja el flujo al publicar (version-nueva.js la compara)
+public/huella.txt
