@@ -18,8 +18,12 @@
 
 import { ERRORES, ESTADOS, ETAPAS, nombreEtapa } from './textos.js';
 import { irA, sellar, alRetroceder } from './navegar.js';
+import { sitioQuell, ligaObra, ligaPieza, ligaPunto } from './ligas.js';
 
 const API = '/s101';
+/* quell101 vive junto a este portal (ver ligas.js): el plano, el avance de
+ * cada pieza y los puntos por definir se abren allá con la misma cuenta. */
+const QUELL = sitioQuell(location.origin);
 const $ = (id) => document.getElementById(id);
 const HOY = new Date(); HOY.setHours(0, 0, 0, 0);
 
@@ -358,6 +362,9 @@ function pintarGeneral() {
   $('g-pct').textContent = pct(totales.avance) + ' %';
   requestAnimationFrame(() => { $('g-barra').style.width = pct(totales.avance) + '%'; });
 
+  pintarPendientes(DATOS.pendientes ?? []);
+  $('g-excel').href = `${API}/orgs/${encodeURIComponent(ORG)}/clientes/${encodeURIComponent(cliente.id)}/estado.xlsx`;
+
   if (!P.length) {
     $('g-proys').innerHTML = '<div class="avance"><p class="nota" style="margin:0">Todavía no hay proyectos ligados a tu cuenta.</p></div>';
     return;
@@ -376,6 +383,27 @@ function pintarGeneral() {
     </button>`;
   }).join('');
   for (const b of $('g-proys').querySelectorAll('.proy')) b.onclick = () => pintarDetalle(+b.dataset.i);
+}
+
+/* Los puntos por definir, hasta arriba del inicio (Mike, 4-oct-2026). Vienen
+ * en la misma respuesta de /peek —las dudas abiertas que el taller le hizo al
+ * cliente en todas sus obras, la más vieja primero— y cada uno abre su pieza
+ * en quell101, que es donde se contesta. Sin puntos, el bloque no se enseña:
+ * un «no tienes nada pendiente» encima del dinero es ruido. */
+function pintarPendientes(pend) {
+  $('g-pendientes').hidden = !pend.length;
+  if (!pend.length) { $('g-puntos').innerHTML = ''; return; }
+  $('g-pend-t').textContent = pend.length === 1
+    ? 'Un punto que el taller necesita que definas'
+    : `${pend.length} puntos que el taller necesita que definas`;
+  $('g-puntos').innerHTML = pend.map((d) => {
+    const donde = [d.obra, d.codigo, d.pieza].filter(Boolean).map(esc).join(' · ');
+    return `<a class="punto" href="${esc(ligaPunto(QUELL, d))}" target="_blank" rel="noopener">
+      <div class="t">${esc(d.texto)}</div>
+      <div class="m">${donde}${donde ? ' · ' : ''}${fecha(d.created_at)}${d.quien ? ' · ' + esc(d.quien) : ''}</div>
+      <div class="flecha">Responder →</div>
+    </a>`;
+  }).join('');
 }
 
 function pintarDetalle(i) {
@@ -403,22 +431,45 @@ function pintarDetalle(i) {
   $('d-barra').style.width = '0';
   requestAnimationFrame(() => { $('d-barra').style.width = pct(p.avance) + '%'; });
 
+  /* La obra en quell101 (Mike, 4-oct): una liga, si el proyecto la tiene. */
+  if (p.obra) {
+    $('d-obra').href = ligaObra(QUELL, p.obra.id);
+    $('d-obra-n').textContent = `Obra «${p.obra.nombre}»: el plano, el avance pieza por pieza y los puntos por definir.`;
+    $('d-obra-caja').hidden = false;
+  } else {
+    $('d-obra-caja').hidden = true;
+  }
+
   const items = p.items ?? [];
   const sinEtapa = items.some((it) => it.etapa == null);
   $('d-etapas-nota').textContent = sinEtapa ? 'El avance de fabricación lo marca el taller.' : '';
+  const conPieza = items.filter((it) => (it.piezas ?? []).length).length;
+  $('d-items-nota').textContent = conPieza ? 'Toca un producto para abrirlo en quell101, con sus planos.' : '';
   $('d-items').innerHTML = items.length ? items.map((it) => {
     const et = it.etapa;
     const pasos = ETAPAS.map((nombre, k) =>
       `<i class="${et >= 7 ? 'fin' : (et != null && k < et ? 'on' : '')}" title="${esc(nombre)}"></i>`).join('');
     const fe = dia(it.fecha_entrega);
     const vencida = fe && fe < HOY && !(et >= 7);
+    /* La pieza del plano que cuelga del ítem (0.66.0): el nombre abre su
+     * pantalla en quell101 —precio, planos, puntos por definir— y la columna
+     * de planos dice cuántos tiene. Un ítem sin pieza en el plano se queda
+     * como texto: no hay a dónde mandar. */
+    const pz = (it.piezas ?? [])[0];
+    const liga = pz ? ligaPieza(QUELL, pz.obra_id, pz.id) : null;
+    const docs = (it.piezas ?? []).reduce((s, x) => s + (Number(x.docs) || 0), 0);
+    const nombre = liga ? `<a class="pieza" href="${esc(liga)}" target="_blank" rel="noopener">${esc(it.nombre)}</a>` : esc(it.nombre);
+    const planos = liga
+      ? `<a class="planos" href="${esc(liga)}" target="_blank" rel="noopener">${docs ? `${docs} ${docs === 1 ? 'plano' : 'planos'}` : 'Ver en quell101'}</a>`
+      : '<span class="item-m">—</span>';
     return `<tr>
-      <td><div class="item-n">${esc(it.nombre)}</div>${it.clave ? `<div class="item-m num">${esc(it.clave)}</div>` : ''}</td>
+      <td><div class="item-n">${nombre}</div>${it.clave ? `<div class="item-m num">${esc(it.clave)}</div>` : ''}</td>
       <td><div class="etapa"><span class="pasos">${pasos}</span><span${et == null ? ' style="color:var(--tinta-3)"' : ''}>${esc(nombreEtapa(et))}</span></div></td>
       <td class="fecha ${vencida ? 'tarde' : ''}">${fe ? fecha(it.fecha_entrega) : '—'}</td>
+      <td>${planos}</td>
       <td class="r num">${pesos(it.monto)}</td>
     </tr>`;
-  }).join('') : '<tr><td colspan="4" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
+  }).join('') : '<tr><td colspan="5" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
 
   $('d-pagos').innerHTML = (pagos.length
     ? pagos.map((x) => `<tr><td class="fecha">${fecha(x.fecha)}</td><td>${esc(x.descripcion || 'Pago')}</td><td class="r num">${pesos(x.monto)}</td></tr>`).join('')
