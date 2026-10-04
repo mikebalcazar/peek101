@@ -94,6 +94,19 @@
     <div><p class="eyebrow">Estado de cuenta general</p><h1 id="g-cliente"></h1><div class="sub" id="g-sub"></div></div>
     <div class="nota">Corte al <span id="g-fecha"></span></div>
   </div>
+
+  <!-- LOS PUNTOS POR DEFINIR, HASTA ARRIBA. Mike, 4-oct-2026: «en su pantalla
+       de inicio de Peek debe estar hasta arriba la lista de las dudas que
+       tiene que responder». Son las que el taller le hizo en quell101; se
+       contestan allá, y cada una abre su pieza. Sin puntos, el bloque no sale. -->
+  <section class="pendientes" id="g-pendientes" hidden>
+    <div class="cab">
+      <div><p class="eyebrow">Por definir</p><h2 id="g-pend-t"></h2></div>
+      <div class="nota">Toca uno para contestarlo en quell101.</div>
+    </div>
+    <div class="puntos" id="g-puntos"></div>
+  </section>
+
   <div class="kpis">
     <div class="kpi"><p class="eyebrow">Proyectos</p><div class="v num" id="g-total"></div><div class="d" id="g-total-d"></div></div>
     <div class="kpi"><p class="eyebrow">Pagado</p><div class="v num" id="g-pagado"></div><div class="d" id="g-pagado-d"></div></div>
@@ -106,6 +119,9 @@
 
   <div class="cab"><h2>Por proyecto</h2><div class="nota">Toca un proyecto para ver sus productos</div></div>
   <div class="proys" id="g-proys"></div>
+  <!-- El general también se baja (Mike, 4-oct: «estados de cuentas (general y
+       de proyectos)»). Es el mismo Excel que arma el taller en dash101. -->
+  <div class="bajar"><a class="btn-bajar" id="g-excel" download>Bajar el estado de cuenta general en Excel</a></div>
   <footer>Taller 101 — FORESPOT · Estado de cuenta informativo. Ante cualquier diferencia, aplica el contrato y los recibos emitidos.</footer>
 </main>
 
@@ -127,9 +143,17 @@
     <div class="pista"><i id="d-barra" style="width:0"></i></div>
   </div>
 
-  <div class="cab"><h2 style="font-size:18px">Productos del proyecto</h2></div>
+  <!-- La obra en quell101 (Mike, 4-oct: «que haya un link que le abra la
+       pantalla de quell y pueda ver ahí sus avances»). Sólo si el proyecto
+       tiene obra ligada. -->
+  <div class="obra-liga" id="d-obra-caja" hidden>
+    <a class="btn-bajar obra" id="d-obra" target="_blank" rel="noopener">Ver el avance de la obra en quell101 →</a>
+    <span class="nota" id="d-obra-n"></span>
+  </div>
+
+  <div class="cab"><h2 style="font-size:18px">Productos del proyecto</h2><div class="nota" id="d-items-nota"></div></div>
   <div class="tabla"><table>
-    <thead><tr><th>Producto</th><th>Etapa</th><th>Entrega acordada</th><th class="r">Monto</th></tr></thead>
+    <thead><tr><th>Producto</th><th>Etapa</th><th>Entrega acordada</th><th>Planos</th><th class="r">Monto</th></tr></thead>
     <tbody id="d-items"></tbody>
   </table></div>
   <div class="leyenda">

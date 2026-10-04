@@ -119,6 +119,29 @@ input.pin{letter-spacing:.45em;font-size:20px;font-weight:600;text-align:center}
 .chip.marca{background:color-mix(in srgb,var(--marca) 14%,transparent);color:var(--marca)}
 .chip.aviso{background:color-mix(in srgb,var(--aviso) 18%,transparent);color:var(--aviso)}
 
+/* Los puntos por definir (4-oct-2026): hasta arriba del inicio, en ámbar,
+   porque son lo único que el cliente tiene que HACER aquí. Cada uno es una
+   liga a su pieza en quell101. */
+.pendientes{margin-bottom:28px}
+.puntos{display:grid;gap:8px}
+.punto{display:grid;grid-template-columns:1fr auto;gap:3px 16px;align-items:center;background:var(--sup);border:1px solid var(--linea);border-left:4px solid var(--aviso);border-radius:10px;padding:12px 16px;color:inherit;text-decoration:none}
+.punto:hover{border-color:var(--marca);border-left-color:var(--aviso)}
+.punto:focus-visible{outline:2px solid var(--marca-2);outline-offset:2px}
+.punto .t{font-weight:600;grid-column:1}
+.punto .m{grid-column:1;font-size:12.5px;color:var(--tinta-3)}
+.punto .flecha{grid-column:2;grid-row:1/3;color:var(--marca);font-weight:700;white-space:nowrap}
+
+/* La liga a la obra en quell101, debajo del avance del proyecto. */
+.obra-liga{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:-16px 0 26px}
+.btn-bajar.obra{color:var(--marca);border-color:var(--marca-2);font-weight:600}
+.btn-bajar.obra:hover{background:color-mix(in srgb,var(--marca) 8%,#fff)}
+.obra-liga .nota{margin:0}
+/* El producto que tiene pieza en el plano se abre en quell101. */
+a.pieza{color:inherit;text-decoration:underline;text-decoration-color:var(--marca-2);text-decoration-thickness:1px;text-underline-offset:3px}
+a.pieza:hover{color:var(--marca)}
+.planos{display:inline-block;font-size:12.5px;font-weight:600;color:var(--marca);text-decoration:none;white-space:nowrap}
+.planos:hover{text-decoration:underline}
+
 /* detalle */
 .detalle .kpis{grid-template-columns:repeat(4,1fr)}
 .tabla{background:var(--sup);border:1px solid var(--linea);border-radius:10px;overflow-x:auto}
@@ -161,7 +184,7 @@ td.r,th.r{text-align:right}
 /* En papel: se va lo de navegar y se queda el documento. El cliente hace su
    PDF con «Imprimir → Guardar como PDF», igual que el taller. */
 @media print{
-  .barra,.volver,.bajar,.leyenda{display:none !important}
+  .barra,.volver,.bajar,.leyenda,.pendientes,.obra-liga{display:none !important}
   body{background:#fff}
   .wrap{padding:0}
   /* Un renglón partido entre dos hojas es un renglón que alguien va a leer mal. */
@@ -176,6 +199,8 @@ footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
   .kpi .v{font-size:22px}
   .proy{grid-template-columns:1fr 1fr;row-gap:10px}
   .proy .flecha{display:none}
+  .punto{grid-template-columns:1fr}
+  .punto .flecha{grid-column:1;grid-row:auto;margin-top:4px}
   .wrap{padding:20px 16px 50px}
   .barra{padding:0 16px}
 }

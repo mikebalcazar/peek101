@@ -224,12 +224,53 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   const tarjetas = await pagina.locator('#g-proys .proy').count();
   rev(tarjetas === datos.proyectos.length, 'hay una tarjeta por proyecto', `${tarjetas} de ${datos.proyectos.length}`);
 
+  /* LO DE QUELL101, JUNTO (Mike, 4-oct-2026). Los puntos por definir van
+   * hasta arriba, uno por cada pendiente que trae /peek, y cada uno es una
+   * liga a quell101; sin pendientes el bloque no sale. El Excel general baja
+   * de verdad: desde 0.66.0 la API se lo da al propio cliente. */
+  const pend = datos.pendientes;
+  rev(Array.isArray(pend), '/peek trae la lista de pendientes (contrato 0.66.0)');
+  const puntos = await pagina.locator('#g-puntos .punto').count();
+  rev(puntos === (pend?.length ?? 0), 'hay un punto por definir por cada pendiente', `${puntos} de ${pend?.length ?? 0}`);
+  const bloqueOculto = await pagina.locator('#g-pendientes').evaluate((el) => el.hidden);
+  rev(bloqueOculto === !(pend?.length), (pend?.length ? 'con pendientes, el bloque se enseña' : 'sin pendientes, el bloque no se enseña'));
+  if (pend?.length) {
+    const arriba = await pagina.evaluate(() => document.getElementById('g-pendientes').getBoundingClientRect().top < document.querySelector('#v-general .kpis').getBoundingClientRect().top);
+    rev(arriba, 'y va arriba del dinero');
+    const hrefs = await pagina.locator('#g-puntos .punto').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    rev(hrefs.every((h) => /\/#\/p\/[^/]+(\/e\/[^/]+|\/dudas)$/.test(h)), 'cada punto abre su pieza o los puntos de su obra en quell101', hrefs[0]);
+    rev((await pagina.textContent('#g-puntos .punto .t')).trim() === pend[0].texto, 'el primero es el más viejo, con su texto');
+  }
+  const ligaGeneral = await pagina.getAttribute('#g-excel', 'href');
+  rev(ligaGeneral.endsWith(`/clientes/${datos.cliente.id}/estado.xlsx`), 'el Excel general apunta al del cliente', ligaGeneral);
+  const excelGeneral = await pagina.evaluate(async (u) => {
+    const r = await fetch(u, { credentials: 'include' });
+    const b = new Uint8Array(await r.arrayBuffer());
+    return { estado: r.status, pk: b[0] === 0x50 && b[1] === 0x4b, bytes: b.byteLength };
+  }, ligaGeneral);
+  rev(excelGeneral.estado === 200 && excelGeneral.pk, 'y baja un .xlsx de verdad', `${excelGeneral.estado}, ${excelGeneral.bytes} bytes`);
+
   // El detalle del primer proyecto: productos y pagos, contados.
   await pagina.locator('#g-proys .proy').first().click();
   await pagina.waitForSelector('#v-detalle:not([hidden])', { timeout: 15000 });
   const p = datos.proyectos[0];
   const filas = await pagina.locator('#d-items tr').count();
   rev(filas === (p.items?.length ?? 0), 'una fila por producto', `${filas} de ${p.items?.length ?? 0}`);
+
+  /* La obra en quell101 y las piezas de cada producto (0.66.0): la liga a la
+   * obra sale sólo si el proyecto la tiene; el producto con pieza se abre en
+   * quell101 y dice cuántos planos tiene. Se compara con el JSON, no con
+   * «se ve bien». */
+  const cajaObra = await pagina.locator('#d-obra-caja').evaluate((el) => el.hidden);
+  rev(cajaObra === !p.obra, p.obra ? 'el proyecto tiene obra en quell101 y la liga se enseña' : 'sin obra ligada, la liga no se enseña');
+  if (p.obra) {
+    const h = await pagina.getAttribute('#d-obra', 'href');
+    rev(h.endsWith(`/#/p/${encodeURIComponent(p.obra.id)}`), 'y abre esa obra', h);
+  }
+  const conPieza = (p.items ?? []).filter((it) => (it.piezas ?? []).length).length;
+  const ligasPieza = await pagina.locator('#d-items a.pieza').count();
+  rev(ligasPieza === conPieza, 'cada producto con pieza en el plano abre su pieza en quell101', `${ligasPieza} de ${conPieza}`);
+  rev((await pagina.locator('#d-items tr').first().locator('td').count()) === (p.items?.length ? 5 : 1), 'la tabla trae la columna de planos');
 
   const pagosDelProyecto = (datos.pagos ?? []).filter((x) => x.proyecto_id === p.id);
   // Las filas de pagos traen una más: el renglón del total.
