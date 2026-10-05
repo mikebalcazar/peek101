@@ -97,6 +97,15 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(String(e)));
   pagina.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errores.push(m.text()); });
+  /* Lo que contestó el motor de obra a cada escritura: si algo no aparece en
+   * pantalla, hay que saber si fue la API o la pantalla. */
+  const escrituras = [];
+  pagina.on('response', async (r) => {
+    if (r.request().method() !== 'POST' || !/\/quell\//.test(r.url())) return;
+    const ruta = new URL(r.url()).pathname.replace(/^.*\/quell/, '/quell');
+    const detalle = r.status() >= 400 ? ` ${(await r.text().catch(() => '')).slice(0, 300)}` : '';
+    escrituras.push(`POST ${ruta} → ${r.status()}${detalle}`);
+  });
 
   await pagina.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await pagina.waitForSelector('#v-correo:not([hidden])', { timeout: 15000 });
@@ -312,8 +321,10 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
       const texto = `Pregunta de prueba ${Date.now().toString(36)}: ¿a qué hora llegan a instalar?`;
       await pagina.fill('#o-preguntar textarea', texto);
       await pagina.click('#o-preguntar button[type=submit]');
-      await pagina.waitForFunction((t) => [...document.querySelectorAll('#o-puntos .duda .t')].some((e) => e.textContent.trim() === t), texto, { timeout: 20000 });
-      rev(true, 'una pregunta del cliente se manda y aparece en la lista');
+      const aparecio = await pagina.waitForFunction((t) => [...document.querySelectorAll('#o-puntos .duda .t')].some((e) => e.textContent.trim() === t), texto, { timeout: 30000 }).then(() => true, () => false);
+      const errCuadro = ((await pagina.textContent('#o-preguntar .err')) || '').trim();
+      rev(aparecio, 'una pregunta del cliente se manda y aparece en la lista',
+        aparecio ? '' : `no apareció · cuadro: «${errCuadro}» · ${escrituras.join(', ') || 'ningún POST salió'} · consola: ${errores.slice(0, 3).join(' | ') || 'limpia'} · puntos pintados: ${await pagina.locator('#o-puntos .duda').count()}`);
       const despues = (await motor(`/projects/${p.obra.id}/dudas`)).dudas ?? [];
       rev(despues.some((d) => d.texto === texto && d.para === 'cliente'), 'y el motor la tiene, para el cliente');
       rev((await pagina.inputValue('#o-preguntar textarea')) === '', 'el cuadro queda limpio');
