@@ -124,23 +124,91 @@ input.pin{letter-spacing:.45em;font-size:20px;font-weight:600;text-align:center}
    liga a su pieza en quell101. */
 .pendientes{margin-bottom:28px}
 .puntos{display:grid;gap:8px}
-.punto{display:grid;grid-template-columns:1fr auto;gap:3px 16px;align-items:center;background:var(--sup);border:1px solid var(--linea);border-left:4px solid var(--aviso);border-radius:10px;padding:12px 16px;color:inherit;text-decoration:none}
+.punto{display:grid;grid-template-columns:1fr auto;gap:3px 16px;align-items:center;background:var(--sup);border:1px solid var(--linea);border-left:4px solid var(--aviso);border-radius:10px;padding:12px 16px;color:inherit;text-decoration:none;font:inherit;text-align:left;width:100%;cursor:pointer}
 .punto:hover{border-color:var(--marca);border-left-color:var(--aviso)}
 .punto:focus-visible{outline:2px solid var(--marca-2);outline-offset:2px}
 .punto .t{font-weight:600;grid-column:1}
 .punto .m{grid-column:1;font-size:12.5px;color:var(--tinta-3)}
 .punto .flecha{grid-column:2;grid-row:1/3;color:var(--marca);font-weight:700;white-space:nowrap}
 
-/* La liga a la obra en quell101, debajo del avance del proyecto. */
+/* El botón a la obra, debajo del avance del proyecto. */
 .obra-liga{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:-16px 0 26px}
 .btn-bajar.obra{color:var(--marca);border-color:var(--marca-2);font-weight:600}
 .btn-bajar.obra:hover{background:color-mix(in srgb,var(--marca) 8%,#fff)}
 .obra-liga .nota{margin:0}
-/* El producto que tiene pieza en el plano se abre en quell101. */
-a.pieza{color:inherit;text-decoration:underline;text-decoration-color:var(--marca-2);text-decoration-thickness:1px;text-underline-offset:3px}
-a.pieza:hover{color:var(--marca)}
-.planos{display:inline-block;font-size:12.5px;font-weight:600;color:var(--marca);text-decoration:none;white-space:nowrap}
+/* El producto que tiene pieza en el plano abre la pieza aquí. */
+button.pieza{background:none;border:0;padding:0;font:inherit;font-weight:600;color:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--marca-2);text-decoration-thickness:1px;text-underline-offset:3px}
+button.pieza:hover{color:var(--marca)}
+.planos{display:inline-block;background:none;border:0;padding:0;font:inherit;font-size:12.5px;font-weight:600;color:var(--marca);white-space:nowrap}
 .planos:hover{text-decoration:underline}
+
+/* ─────────────── la obra (5-oct-2026) ───────────────
+   El plano con sus pines, las piezas en lista, los puntos por definir y el
+   cuadro para preguntar. Mismos colores de pieza que quell101. */
+.planos-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.planos-tabs .chip{cursor:pointer;border:0;font:inherit;font-size:12px;font-weight:600}
+.plano .hoja{position:relative;background:var(--sup);border:1px solid var(--linea);border-radius:10px;overflow:hidden;line-height:0}
+.plano .hoja img{display:block;width:100%;height:auto}
+.plano .pines{position:absolute;inset:0}
+.pin{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--tinte,#1C3557);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);color:#fff;font:inherit;font-size:8.5px;font-weight:700;line-height:1;padding:0;display:grid;place-items:center;cursor:pointer}
+.pin span{overflow:hidden;max-width:22px;text-overflow:clip;white-space:nowrap}
+.pin.definir{box-shadow:0 0 0 3px var(--aviso),0 1px 4px rgba(0,0,0,.35);animation:latido 1.6s ease-in-out infinite}
+.pin.fuera{opacity:.55;border-style:dashed}
+.pin:hover,.pin:focus-visible{z-index:2;transform:translate(-50%,-50%) scale(1.15);outline:none}
+@keyframes latido{0%,100%{box-shadow:0 0 0 3px var(--aviso),0 1px 4px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--aviso) 45%,transparent),0 1px 4px rgba(0,0,0,.35)}}
+@media (prefers-reduced-motion:reduce){.pin.definir{animation:none}}
+.leyenda-plano{margin:10px 0 4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.muestra{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--marca);flex-shrink:0}
+.muestra.definir{box-shadow:0 0 0 2px var(--aviso)}
+.piezas{display:grid;gap:6px}
+.pieza-fila{display:flex;align-items:center;gap:10px;background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:11px 14px;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
+.pieza-fila:hover{border-color:var(--marca-2)}
+.pieza-fila .cod{font-size:12.5px;color:var(--tinta-3);min-width:56px}
+.pieza-fila .n{font-weight:600;flex:1}
+.pieza-fila .flecha{color:var(--marca);font-weight:700}
+.vacio{margin:0;padding:14px 0}
+
+/* los puntos (dudas) */
+.dudas{display:grid;gap:10px}
+.duda{background:var(--sup);border:1px solid var(--linea);border-left:4px solid var(--linea);border-radius:10px;padding:12px 16px;display:grid;gap:8px}
+.duda.abierta{border-left-color:var(--aviso)}
+.duda.cerrada{border-left-color:var(--ok)}
+.duda .q{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.duda .q b{font-size:13.5px}
+.duda .cuando{color:var(--tinta-3);font-size:12px}
+.duda .t{margin:0;font-size:15px}
+.duda .liga{justify-self:start;background:none;border:1px solid var(--linea);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;color:var(--marca);font-weight:600;cursor:pointer}
+.duda .liga:hover{border-color:var(--marca-2)}
+.fotos{display:flex;gap:6px;flex-wrap:wrap}
+.fotos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--linea);display:block}
+.respuesta{border-top:1px dashed var(--linea);padding-top:8px;display:grid;gap:6px}
+.respuesta p{margin:0;font-size:14px}
+.definidos{display:grid;gap:10px;margin-top:10px}
+.definidos .duda{opacity:.85}
+.ver-definidos{justify-self:start;margin-top:6px}
+
+/* contestar y preguntar */
+form.responder,form.preguntar{display:grid;gap:8px}
+form.responder{border-top:1px dashed var(--linea);padding-top:10px}
+form.responder textarea,form.preguntar textarea{font:inherit;padding:10px 12px;border:1px solid var(--linea);border-radius:8px;background:var(--fondo);color:var(--tinta);width:100%;resize:vertical}
+form.responder textarea:focus,form.preguntar textarea:focus{outline:2px solid var(--marca-2);outline-offset:1px;border-color:var(--marca)}
+.acciones{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.adjuntar{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--tinta-2);cursor:pointer}
+.btn.chico{padding:9px 16px;font-size:14px}
+.preguntar-caja{margin-top:30px;background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:16px 18px;display:grid;gap:10px}
+.preguntar-caja h3{font-size:15px}
+
+/* la pieza */
+.pieza .kpis.del-item{grid-template-columns:repeat(3,1fr)}
+.descripcion{margin:-4px 0 0;color:var(--tinta-2);font-size:14.5px}
+.docs{display:grid;gap:8px}
+.doc{display:flex;align-items:center;gap:12px;background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:11px 14px;color:inherit;text-decoration:none}
+.doc:hover{border-color:var(--marca-2)}
+.doc .rot{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-3);font-weight:600;min-width:110px}
+.doc b{flex:1}
+.plano-item{display:block;width:100%;height:auto;max-height:420px;object-fit:contain;background:var(--sup);border:1px solid var(--linea);border-radius:10px}
+.notas{background:var(--sup);border:1px solid var(--linea);border-radius:10px;padding:12px 16px}
+.notas ul{margin:6px 0 0;padding-left:18px;font-size:14px}
 
 /* detalle */
 .detalle .kpis{grid-template-columns:repeat(4,1fr)}
@@ -184,7 +252,7 @@ td.r,th.r{text-align:right}
 /* En papel: se va lo de navegar y se queda el documento. El cliente hace su
    PDF con «Imprimir → Guardar como PDF», igual que el taller. */
 @media print{
-  .barra,.volver,.bajar,.leyenda,.pendientes,.obra-liga{display:none !important}
+  .barra,.volver,.bajar,.leyenda,.pendientes,.obra-liga,.preguntar-caja,form.responder{display:none !important}
   body{background:#fff}
   .wrap{padding:0}
   /* Un renglón partido entre dos hojas es un renglón que alguien va a leer mal. */
@@ -201,6 +269,9 @@ footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
   .proy .flecha{display:none}
   .punto{grid-template-columns:1fr}
   .punto .flecha{grid-column:1;grid-row:auto;margin-top:4px}
+  .pieza .kpis.del-item{grid-template-columns:1fr 1fr}
+  .pin{width:22px;height:22px;font-size:7.5px}
+  .doc .rot{min-width:0}
   .wrap{padding:20px 16px 50px}
   .barra{padding:0 16px}
 }

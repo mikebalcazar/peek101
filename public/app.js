@@ -18,12 +18,9 @@
 
 import { ERRORES, ESTADOS, ETAPAS, nombreEtapa } from './textos.js';
 import { irA, sellar, alRetroceder } from './navegar.js';
-import { sitioQuell, ligaObra, ligaPieza, ligaPunto } from './ligas.js';
+import { montarObra, abrirObra, abrirPieza, pintarObra } from './obra.js';
 
 const API = '/s101';
-/* quell101 vive junto a este portal (ver ligas.js): el plano, el avance de
- * cada pieza y los puntos por definir se abren allá con la misma cuenta. */
-const QUELL = sitioQuell(location.origin);
 const $ = (id) => document.getElementById(id);
 const HOY = new Date(); HOY.setHours(0, 0, 0, 0);
 
@@ -90,9 +87,16 @@ let ORG = null;       // la empresa del cliente, de /yo
 let correo = '';
 
 function mostrar(cual) {
-  for (const v of ['v-correo', 'v-clave', 'v-codigo', 'v-nueva', 'v-cargando', 'v-general', 'v-detalle']) $(v).hidden = v !== cual;
+  for (const v of ['v-correo', 'v-clave', 'v-codigo', 'v-nueva', 'v-cargando', 'v-general', 'v-detalle', 'v-obra', 'v-pieza']) $(v).hidden = v !== cual;
   window.scrollTo(0, 0);
 }
+
+/* LA OBRA, AQUÍ (Mike, 5-oct-2026: «Quiero que el único visor del cliente sea
+ * Peek y que ahí mismo pueda ver el plano general y aparte contestar los
+ * puntos de dudas. Y el generar sus propias dudas desde Peek»). Las pantallas
+ * de la obra y de la pieza viven en obra.js; aquí se les presta lo que
+ * necesitan y se les da su lugar en el «atrás». */
+const ACTUAL = { i: null, obra: null, pieza: null };
 
 /* EL «ATRÁS» DEL NAVEGADOR (Mike, 22-sep-2026).
  *
@@ -104,11 +108,16 @@ function mostrar(cual) {
  * pantallas de entrada —correo, contraseña, código— no cuentan: son pasos
  * de un trámite, y dejar que «atrás» los recorra invita a meterse a medio
  * camino con el código ya gastado. */
-const HONDURA = { general: 1, detalle: 2 };
+const HONDURA = { general: 1, detalle: 2, obra: 3, pieza: 4 };
 /* Quién pinta cada hondura cuando el navegador retrocede. La lista se
  * repinta a propósito: los números pudieron cambiar mientras el cliente
- * miraba el detalle. */
-alRetroceder((h) => { if (h <= HONDURA.general) { pintarGeneral(); mostrar('v-general'); } });
+ * miraba el detalle. Desde el 5-oct hay cuatro honduras: la lista, el
+ * proyecto, la obra (el plano) y una pieza; cada «atrás» sube una. */
+alRetroceder((h) => {
+  if (h >= HONDURA.obra && ACTUAL.obra) { pintarObra(ACTUAL.obra); return; }
+  if (h === HONDURA.detalle && ACTUAL.i != null && DATOS?.proyectos?.[ACTUAL.i]) { pintarDetalle(ACTUAL.i); mostrar('v-detalle'); return; }
+  pintarGeneral(); mostrar('v-general');
+});
 
 /* ─────────────── entrada ─────────────── */
 
@@ -326,6 +335,7 @@ async function entrar() {
     pintarGeneral();
     mostrar('v-general');
     sellar(HONDURA.general);
+    abrirDesdeLaLiga();
   } catch (e) {
     $('err-clave').textContent = e.message;
     mostrar(correo ? 'v-clave' : 'v-correo');
@@ -382,7 +392,7 @@ function pintarGeneral() {
       <div class="flecha">Ver →</div>
     </button>`;
   }).join('');
-  for (const b of $('g-proys').querySelectorAll('.proy')) b.onclick = () => pintarDetalle(+b.dataset.i);
+  for (const b of $('g-proys').querySelectorAll('.proy')) b.onclick = () => abrirDetalle(+b.dataset.i);
 }
 
 /* Los puntos por definir, hasta arriba del inicio (Mike, 4-oct-2026). Vienen
@@ -398,15 +408,27 @@ function pintarPendientes(pend) {
     : `${pend.length} puntos que el taller necesita que definas`;
   $('g-puntos').innerHTML = pend.map((d) => {
     const donde = [d.obra, d.codigo, d.pieza].filter(Boolean).map(esc).join(' · ');
-    return `<a class="punto" href="${esc(ligaPunto(QUELL, d))}" target="_blank" rel="noopener">
+    return `<button type="button" class="punto" data-obra="${esc(d.obra_id)}"${d.element_id ? ` data-pieza="${esc(d.element_id)}"` : ''}>
       <div class="t">${esc(d.texto)}</div>
       <div class="m">${donde}${donde ? ' · ' : ''}${fecha(d.created_at)}${d.quien ? ' · ' + esc(d.quien) : ''}</div>
       <div class="flecha">Responder →</div>
-    </a>`;
+    </button>`;
   }).join('');
+  // Cada punto abre su pieza aquí mismo (o la obra, si no cuelga de una).
+  for (const b of $('g-puntos').querySelectorAll('.punto')) {
+    b.onclick = () => (b.dataset.pieza ? abrirPieza(b.dataset.pieza, b.dataset.obra) : abrirObra(b.dataset.obra));
+  }
+}
+
+/** Abrir el proyecto: pintarlo y bajar una hondura. `pintarDetalle` sólo
+ *  pinta: también lo llama el «atrás» al volver desde la obra. */
+function abrirDetalle(i) {
+  pintarDetalle(i);
+  irA(HONDURA.detalle, () => mostrar('v-detalle'));
 }
 
 function pintarDetalle(i) {
+  ACTUAL.i = i;
   const p = DATOS.proyectos[i];
   const saldo = (p.precio_venta ?? 0) - (p.cobrado ?? 0);
   const [e, c] = estadoDe(p);
@@ -431,10 +453,11 @@ function pintarDetalle(i) {
   $('d-barra').style.width = '0';
   requestAnimationFrame(() => { $('d-barra').style.width = pct(p.avance) + '%'; });
 
-  /* La obra en quell101 (Mike, 4-oct): una liga, si el proyecto la tiene. */
+  /* La obra (Mike, 5-oct: el plano y los puntos se ven AQUÍ): un botón, si el
+   * proyecto tiene obra ligada. */
   if (p.obra) {
-    $('d-obra').href = ligaObra(QUELL, p.obra.id);
-    $('d-obra-n').textContent = `Obra «${p.obra.nombre}»: el plano, el avance pieza por pieza y los puntos por definir.`;
+    $('d-obra').onclick = () => abrirObra(p.obra.id);
+    $('d-obra-n').textContent = `Obra «${p.obra.nombre}»: el plano, cada pieza y los puntos por definir.`;
     $('d-obra-caja').hidden = false;
   } else {
     $('d-obra-caja').hidden = true;
@@ -444,23 +467,23 @@ function pintarDetalle(i) {
   const sinEtapa = items.some((it) => it.etapa == null);
   $('d-etapas-nota').textContent = sinEtapa ? 'El avance de fabricación lo marca el taller.' : '';
   const conPieza = items.filter((it) => (it.piezas ?? []).length).length;
-  $('d-items-nota').textContent = conPieza ? 'Toca un producto para abrirlo en quell101, con sus planos.' : '';
+  $('d-items-nota').textContent = conPieza ? 'Toca un producto para ver su pieza en el plano, sus planos y sus puntos.' : '';
   $('d-items').innerHTML = items.length ? items.map((it) => {
     const et = it.etapa;
     const pasos = ETAPAS.map((nombre, k) =>
       `<i class="${et >= 7 ? 'fin' : (et != null && k < et ? 'on' : '')}" title="${esc(nombre)}"></i>`).join('');
     const fe = dia(it.fecha_entrega);
     const vencida = fe && fe < HOY && !(et >= 7);
-    /* La pieza del plano que cuelga del ítem (0.66.0): el nombre abre su
-     * pantalla en quell101 —precio, planos, puntos por definir— y la columna
-     * de planos dice cuántos tiene. Un ítem sin pieza en el plano se queda
-     * como texto: no hay a dónde mandar. */
+    /* La pieza del plano que cuelga del ítem (0.66.0): el nombre abre la
+     * pieza aquí —precio, planos, puntos por definir— y la columna de planos
+     * dice cuántos tiene. Un ítem sin pieza en el plano se queda como texto:
+     * no hay a dónde ir. */
     const pz = (it.piezas ?? [])[0];
-    const liga = pz ? ligaPieza(QUELL, pz.obra_id, pz.id) : null;
     const docs = (it.piezas ?? []).reduce((s, x) => s + (Number(x.docs) || 0), 0);
-    const nombre = liga ? `<a class="pieza" href="${esc(liga)}" target="_blank" rel="noopener">${esc(it.nombre)}</a>` : esc(it.nombre);
-    const planos = liga
-      ? `<a class="planos" href="${esc(liga)}" target="_blank" rel="noopener">${docs ? `${docs} ${docs === 1 ? 'plano' : 'planos'}` : 'Ver en quell101'}</a>`
+    const datos = pz ? `data-pieza="${esc(pz.id)}" data-obra="${esc(pz.obra_id)}"` : '';
+    const nombre = pz ? `<button type="button" class="pieza" ${datos}>${esc(it.nombre)}</button>` : esc(it.nombre);
+    const planos = pz
+      ? `<button type="button" class="planos" ${datos}>${docs ? `${docs} ${docs === 1 ? 'plano' : 'planos'}` : 'Ver la pieza'}</button>`
       : '<span class="item-m">—</span>';
     return `<tr>
       <td><div class="item-n">${nombre}</div>${it.clave ? `<div class="item-m num">${esc(it.clave)}</div>` : ''}</td>
@@ -470,6 +493,7 @@ function pintarDetalle(i) {
       <td class="r num">${pesos(it.monto)}</td>
     </tr>`;
   }).join('') : '<tr><td colspan="5" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
+  for (const b of $('d-items').querySelectorAll('[data-pieza]')) b.onclick = () => abrirPieza(b.dataset.pieza, b.dataset.obra);
 
   $('d-pagos').innerHTML = (pagos.length
     ? pagos.map((x) => `<tr><td class="fecha">${fecha(x.fecha)}</td><td>${esc(x.descripcion || 'Pago')}</td><td class="r num">${pesos(x.monto)}</td></tr>`).join('')
@@ -481,7 +505,6 @@ function pintarDetalle(i) {
   $('d-excel').href = `${API}/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(p.id)}/estado.xlsx`;
   ponerDesglose(p.id);
 
-  irA(HONDURA.detalle, () => mostrar('v-detalle'));
 }
 
 /* ─────────────── el desglose fiscal, del servidor ───────────────
@@ -522,6 +545,31 @@ async function ponerDesglose(proyecto_id) {
     /* Sin desglose. Lo demás ya está pintado. */
   }
 }
+
+/* Una liga del correo (los puntos por definir, la invitación) cae en la obra
+ * o en una pieza: `#/obra/OBRA`, `#/pieza/PIEZA`. Se lee al entrar, una vez,
+ * y se quita de la barra para que recargar no vuelva a abrirla. */
+function abrirDesdeLaLiga() {
+  const m = /^#\/(obra|pieza)\/([^/?#]+)/.exec(location.hash || '');
+  if (!m) return;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  const id = decodeURIComponent(m[2]);
+  if (m[1] === 'obra') abrirObra(id); else abrirPieza(id);
+}
+
+montarObra({
+  API, $, esc, fecha, pesos, nombreEtapa, mostrar, irA, HONDURA, ACTUAL,
+  org: () => ORG,
+  proyectoDeObra: (id) => (DATOS?.proyectos ?? []).find((p) => p.obra && p.obra.id === id) ?? null,
+  recargarPeek: async () => { DATOS = await pedir(`/orgs/${encodeURIComponent(ORG)}/peek`); },
+  falla: (e) => { alert(e.message || 'Algo no salió bien. Vuelve a intentar.'); mostrar(ACTUAL.i != null ? 'v-detalle' : 'v-general'); },
+  /* Volver de la obra: al proyecto si se entró por él, si no al inicio. Y de
+   * la pieza, a la obra. Las tres son `irA` hacia afuera, que es
+   * `history.back()`: el historial queda igual que si se hubiera picado
+   * «atrás», y el popstate pinta lo que toca. */
+  volverDeObra: () => irA(ACTUAL.i != null ? HONDURA.detalle : HONDURA.general, () => {}),
+  volverDePieza: () => irA(HONDURA.obra, () => {}),
+});
 
 /* «Volver» retrocede de verdad en vez de sólo cambiar de pantalla: si
  * escribiera una entrada nueva, el siguiente «atrás» reabriría el proyecto
