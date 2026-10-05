@@ -237,9 +237,21 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   if (pend?.length) {
     const arriba = await pagina.evaluate(() => document.getElementById('g-pendientes').getBoundingClientRect().top < document.querySelector('#v-general .kpis').getBoundingClientRect().top);
     rev(arriba, 'y va arriba del dinero');
-    const hrefs = await pagina.locator('#g-puntos .punto').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
-    rev(hrefs.every((h) => /\/#\/p\/[^/]+(\/e\/[^/]+|\/dudas)$/.test(h)), 'cada punto abre su pieza o los puntos de su obra en quell101', hrefs[0]);
     rev((await pagina.textContent('#g-puntos .punto .t')).trim() === pend[0].texto, 'el primero es el más viejo, con su texto');
+    /* Un punto se abre AQUÍ (5-oct: peek es el único visor del cliente): en
+     * su pieza si cuelga de una, si no en la obra. Y «atrás» regresa al inicio. */
+    await pagina.locator('#g-puntos .punto').first().click();
+    const destino = pend[0].element_id ? '#v-pieza' : '#v-obra';
+    await pagina.waitForSelector(`${destino}:not([hidden])`, { timeout: 20000 });
+    rev(true, `el punto abre ${pend[0].element_id ? 'su pieza' : 'su obra'} dentro del portal`);
+    if (pend[0].element_id) {
+      const abiertos = await pagina.locator('#p-puntos .duda[data-estado="abierta"]').count();
+      rev(abiertos >= 1, 'y ahí está el punto, abierto, con su cuadro para contestar', `${abiertos}`);
+      rev((await pagina.locator('#p-puntos form.responder').count()) >= 1, 'el cuadro para contestar existe');
+    }
+    await pagina.goBack();
+    await pagina.waitForSelector('#v-general:not([hidden])', { timeout: 15000 });
+    rev(true, '«atrás» regresa al inicio');
   }
   const ligaGeneral = await pagina.getAttribute('#g-excel', 'href');
   rev(ligaGeneral.endsWith(`/clientes/${datos.cliente.id}/estado.xlsx`), 'el Excel general apunta al del cliente', ligaGeneral);
@@ -262,15 +274,69 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
    * quell101 y dice cuántos planos tiene. Se compara con el JSON, no con
    * «se ve bien». */
   const cajaObra = await pagina.locator('#d-obra-caja').evaluate((el) => el.hidden);
-  rev(cajaObra === !p.obra, p.obra ? 'el proyecto tiene obra en quell101 y la liga se enseña' : 'sin obra ligada, la liga no se enseña');
-  if (p.obra) {
-    const h = await pagina.getAttribute('#d-obra', 'href');
-    rev(h.endsWith(`/#/p/${encodeURIComponent(p.obra.id)}`), 'y abre esa obra', h);
-  }
+  rev(cajaObra === !p.obra, p.obra ? 'el proyecto tiene obra y el botón «Ver la obra» se enseña' : 'sin obra ligada, el botón no se enseña');
   const conPieza = (p.items ?? []).filter((it) => (it.piezas ?? []).length).length;
-  const ligasPieza = await pagina.locator('#d-items a.pieza').count();
-  rev(ligasPieza === conPieza, 'cada producto con pieza en el plano abre su pieza en quell101', `${ligasPieza} de ${conPieza}`);
+  const botonesPieza = await pagina.locator('#d-items button.pieza').count();
+  rev(botonesPieza === conPieza, 'cada producto con pieza en el plano abre su pieza aquí', `${botonesPieza} de ${conPieza}`);
   rev((await pagina.locator('#d-items tr').first().locator('td').count()) === (p.items?.length ? 5 : 1), 'la tabla trae la columna de planos');
+
+  /* LA OBRA, ADENTRO (Mike, 5-oct-2026: «Quiero que el único visor del
+   * cliente sea Peek y que ahí mismo pueda ver el plano general y aparte
+   * contestar los puntos de dudas. Y el generar sus propias dudas desde
+   * Peek»). Se compara con lo que contesta el motor de obra: un pin por
+   * pieza, un punto por duda del cliente, y la pieza con el precio del ítem.
+   * La pregunta se manda una sola vez (en el celular) para no llenar la demo. */
+  if (p.obra) {
+    const motor = async (ruta) => pagina.evaluate(async (r) => { const x = await fetch(`/s101/orgs/demo/quell${r}`, { credentials: 'include' }); return x.json(); }, ruta);
+    const obra = await motor(`/projects/${p.obra.id}`);
+    const dudas = (await motor(`/projects/${p.obra.id}/dudas`)).dudas ?? [];
+    await pagina.click('#d-obra');
+    await pagina.waitForSelector('#v-obra:not([hidden])', { timeout: 20000 });
+    rev((await pagina.textContent('#o-nombre')).trim() === obra.project.name, 'la obra abre con su nombre', obra.project.name);
+    const planoActual = (obra.plans ?? [])[0];
+    const piezasDelPlano = (obra.elements ?? []).filter((e) => e.plan_id === planoActual?.id);
+    const pines = await pagina.locator('#o-plano .pin').count();
+    rev(pines === piezasDelPlano.length, 'hay un pin por pieza del plano', `${pines} de ${piezasDelPlano.length}`);
+    if (planoActual) {
+      const img = await pagina.evaluate(async () => { const i = document.querySelector('#o-plano img'); if (!i) return null; if (!i.complete) await new Promise((r) => { i.onload = r; i.onerror = r; }); return { ok: i.naturalWidth > 0, w: i.naturalWidth }; });
+      rev(!!img?.ok, 'el plano se ve: la imagen del bucket carga', img ? `${img.w} px de ancho` : 'sin imagen');
+      const resaltados = await pagina.locator('#o-plano .pin.definir').count();
+      rev(resaltados === piezasDelPlano.filter((e) => e.definir > 0).length, 'las piezas con puntos por definir van resaltadas', `${resaltados}`);
+    }
+    const abiertas = dudas.filter((d) => d.estado === 'abierta');
+    const puntosPintados = await pagina.locator('#o-puntos .duda[data-estado="abierta"]').count();
+    rev(puntosPintados === abiertas.length, 'un punto abierto por cada duda abierta del cliente', `${puntosPintados} de ${abiertas.length}`);
+    rev((await pagina.locator('#o-preguntar textarea').count()) === 1, 'y el cuadro para preguntar está');
+
+    if (etiqueta === 'celular') {
+      const texto = `Pregunta de prueba ${Date.now().toString(36)}: ¿a qué hora llegan a instalar?`;
+      await pagina.fill('#o-preguntar textarea', texto);
+      await pagina.click('#o-preguntar button[type=submit]');
+      await pagina.waitForFunction((t) => [...document.querySelectorAll('#o-puntos .duda .t')].some((e) => e.textContent.trim() === t), texto, { timeout: 20000 });
+      rev(true, 'una pregunta del cliente se manda y aparece en la lista');
+      const despues = (await motor(`/projects/${p.obra.id}/dudas`)).dudas ?? [];
+      rev(despues.some((d) => d.texto === texto && d.para === 'cliente'), 'y el motor la tiene, para el cliente');
+      rev((await pagina.inputValue('#o-preguntar textarea')) === '', 'el cuadro queda limpio');
+    }
+
+    // Una pieza: su precio es el del ítem, al centavo redondo que enseña el portal.
+    if (piezasDelPlano.length) {
+      await pagina.locator('#o-plano .pin').first().click();
+      await pagina.waitForSelector('#v-pieza:not([hidden])', { timeout: 20000 });
+      const pieza = await motor(`/elements/${piezasDelPlano[0].id}`);
+      rev((await pagina.textContent('#p-nombre')).trim() === pieza.element.name, 'la pieza abre con su nombre', pieza.element.name);
+      if (pieza.element.item_monto != null) {
+        rev((await pagina.textContent('#p-precio')).trim() === mx(pieza.element.item_monto), 'y su precio es el del ítem', mx(pieza.element.item_monto));
+      } else rev(await pagina.locator('#p-del-item').evaluate((el) => el.hidden), 'sin ítem ligado, el bloque del ítem no sale');
+      rev((await pagina.locator('#p-preguntar textarea').count()) === 1, 'también se puede preguntar sobre la pieza');
+      await pagina.goBack();
+      await pagina.waitForSelector('#v-obra:not([hidden])', { timeout: 15000 });
+      rev(true, '«atrás» desde la pieza regresa al plano');
+    }
+    await pagina.goBack();
+    await pagina.waitForSelector('#v-detalle:not([hidden])', { timeout: 15000 });
+    rev(true, 'y desde el plano, al proyecto');
+  }
 
   const pagosDelProyecto = (datos.pagos ?? []).filter((x) => x.proyecto_id === p.id);
   // Las filas de pagos traen una más: el renglón del total.

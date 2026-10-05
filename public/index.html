@@ -143,11 +143,10 @@
     <div class="pista"><i id="d-barra" style="width:0"></i></div>
   </div>
 
-  <!-- La obra en quell101 (Mike, 4-oct: «que haya un link que le abra la
-       pantalla de quell y pueda ver ahí sus avances»). Sólo si el proyecto
-       tiene obra ligada. -->
+  <!-- La obra (Mike, 5-oct: el plano y los puntos se ven AQUÍ, peek es el
+       único visor del cliente). Sólo si el proyecto tiene obra ligada. -->
   <div class="obra-liga" id="d-obra-caja" hidden>
-    <a class="btn-bajar obra" id="d-obra" target="_blank" rel="noopener">Ver el avance de la obra en quell101 →</a>
+    <button type="button" class="btn-bajar obra" id="d-obra">Ver la obra: el plano y los puntos por definir →</button>
     <span class="nota" id="d-obra-n"></span>
   </div>
 
@@ -190,6 +189,66 @@
     <p class="nota" id="d-generado"></p>
   </div>
   <footer>Taller 101 — FORESPOT · Estado de cuenta informativo. Ante cualquier diferencia, aplica el contrato y los recibos emitidos.</footer>
+</main>
+
+<!-- LA OBRA · el plano con sus piezas, los puntos por definir y «preguntar».
+     Mike, 5-oct-2026: «Quiero que el único visor del cliente sea Peek y que ahí
+     mismo pueda ver el plano general y aparte contestar los puntos de dudas. Y
+     el generar sus propias dudas desde Peek». Lo pinta obra.js con lo que
+     contesta el motor de obra de la suite (la misma cara de cliente que tenía
+     quell101). -->
+<main class="wrap obra" id="v-obra" hidden>
+  <button class="volver" id="o-volver">← Volver al proyecto</button>
+  <div class="cab" style="margin-top:14px">
+    <div><p class="eyebrow">Tu obra</p><h2 id="o-nombre"></h2><div class="sub" id="o-sub"></div></div>
+    <div class="planos-tabs" id="o-planos"></div>
+  </div>
+  <section class="plano" id="o-plano"></section>
+  <div class="cab" style="margin-top:26px"><h2 style="font-size:18px">Piezas del plano</h2><div class="nota">Toca una para ver su precio, su etapa y sus planos</div></div>
+  <div class="piezas" id="o-piezas"></div>
+  <div class="cab" style="margin-top:30px"><h2 style="font-size:18px" id="o-puntos-t">Puntos por definir</h2><div class="nota">Lo que contestes aquí le llega al taller</div></div>
+  <div class="dudas" id="o-puntos"></div>
+  <section class="preguntar-caja">
+    <h3>¿Tienes una pregunta sobre la obra?</h3>
+    <form class="preguntar" id="o-preguntar">
+      <textarea rows="3" placeholder="Escríbele al taller…"></textarea>
+      <div class="acciones">
+        <label class="adjuntar"><input type="file" accept="image/*" multiple hidden>📷 Foto<span class="nfotos"></span></label>
+        <button type="submit" class="btn chico">Preguntar</button>
+      </div>
+      <div class="err"></div>
+    </form>
+  </section>
+  <footer>Taller 101 — FORESPOT · Lo que ves aquí es lo mismo que ve el taller en su bitácora de obra, recortado a lo tuyo.</footer>
+</main>
+
+<!-- LA PIEZA · precio, etapa, entrega, archivos, sus puntos y preguntar. -->
+<main class="wrap pieza" id="v-pieza" hidden>
+  <button class="volver" id="p-volver">← Volver al plano</button>
+  <div class="cab" style="margin-top:14px">
+    <div><p class="eyebrow" id="p-eyebrow"></p><h2 id="p-nombre"></h2><div class="sub" id="p-sub"></div></div>
+  </div>
+  <div class="kpis del-item" id="p-del-item" hidden>
+    <div class="kpi"><p class="eyebrow">Precio</p><div class="v num" id="p-precio"></div></div>
+    <div class="kpi"><p class="eyebrow">Etapa</p><div class="v" id="p-etapa" style="font-size:18px"></div></div>
+    <div class="kpi"><p class="eyebrow">Entrega acordada</p><div class="v" id="p-entrega" style="font-size:18px"></div><div class="d" id="p-entrega-d"></div></div>
+  </div>
+  <p class="descripcion" id="p-desc" hidden></p>
+  <div class="cab" style="margin-top:22px"><h2 style="font-size:18px">Archivos de la pieza</h2><div class="nota">Se abren en otra pestaña</div></div>
+  <div class="docs" id="p-docs"></div>
+  <div class="cab" style="margin-top:30px"><h2 style="font-size:18px" id="p-puntos-t">Puntos de esta pieza</h2><div class="nota">Lo que contestes aquí le llega al taller</div></div>
+  <div class="dudas" id="p-puntos"></div>
+  <section class="preguntar-caja">
+    <h3>¿Tienes una pregunta sobre esta pieza?</h3>
+    <form class="preguntar" id="p-preguntar">
+      <textarea rows="3" placeholder="Escríbele al taller sobre esta pieza…"></textarea>
+      <div class="acciones">
+        <label class="adjuntar"><input type="file" accept="image/*" multiple hidden>📷 Foto<span class="nfotos"></span></label>
+        <button type="submit" class="btn chico">Preguntar</button>
+      </div>
+      <div class="err"></div>
+    </form>
+  </section>
 </main>
 
 <script type="module" src="app.js"></script>
