@@ -100,7 +100,12 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   /* Lo que contestó el motor de obra a cada escritura: si algo no aparece en
    * pantalla, hay que saber si fue la API o la pantalla. */
   const escrituras = [];
-  pagina.on('response', (r) => { if (r.request().method() === 'POST' && /\/quell\//.test(r.url())) escrituras.push(`POST ${new URL(r.url()).pathname.replace(/^.*\/quell/, '/quell')} → ${r.status()}`); });
+  pagina.on('response', async (r) => {
+    if (r.request().method() !== 'POST' || !/\/quell\//.test(r.url())) return;
+    const ruta = new URL(r.url()).pathname.replace(/^.*\/quell/, '/quell');
+    const detalle = r.status() >= 400 ? ` ${(await r.text().catch(() => '')).slice(0, 300)}` : '';
+    escrituras.push(`POST ${ruta} → ${r.status()}${detalle}`);
+  });
 
   await pagina.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await pagina.waitForSelector('#v-correo:not([hidden])', { timeout: 15000 });
