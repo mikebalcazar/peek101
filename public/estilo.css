@@ -1,57 +1,51 @@
 /* peek101 — la hoja de estilo del portal del cliente.
  *
- * Es la del portal v0 (dash101/portal/index.html, 7-sep), separada del HTML
- * y sin cambios de identidad: azul #0080C1, Raleway para el texto, Sansation
- * para la marca, Fira Sans para las cifras. Las fuentes viajan dentro; nada
- * se pide a Google. Ver claude/tipografia-cifras-suite101.md de dash101.
+ * Desde el 8-oct-2026 con el look de cost101 (fondo azul oscuro, tarjetas de
+ * vidrio, botones redondos; claro sólo al imprimir) y la tipografía de dash y
+ * quell: Raleway para el texto y Fira Sans para las cifras («Cifras», por
+ * unicode-range). El logotipo es el oficial, en trazos: public/peek101-claro.svg.
+ * Las fuentes viajan dentro; nada se pide a Google. Ver
+ * claude/tipografia-cifras-suite101.md de dash101.
  *
- * Van TRES pesos de Raleway, no cinco. El v0 declaraba también el 500 y el
- * 800: al 500 no lo usaba ninguna regla, y al 800 sólo el «101» del
- * logotipo, que ahora va en 700 y se ve igual. Eran 40 KB que el navegador
- * bajaba en cada primera carga para dibujar tres dígitos. Medido con el
- * navegador: la pantalla de entrada pasó de 200.0 KB a 160.0 KB.
- * Lo que sigue pesando son los tres pesos que sí se usan (119 KB): para
- * bajarlos habría que subconjuntar Raleway como ya está subconjuntada Fira,
- * y eso se anota en el README, no se promete aquí. */
+ * Raleway va declarada en sus cinco pesos, como en dash101, pero el navegador
+ * sólo baja los que alguna regla pinta: hoy 400, 600 y 700. Declarar el 500 y
+ * el 800 no cuesta nada hasta que se usan. */
 
 @font-face{font-family:"Cifras";src:url("fonts/fira-cifras-400.woff2") format("woff2");font-weight:400 500;font-display:swap;unicode-range:U+0030-0039,U+00B0,U+00B1,U+00D7,U+0025}
 @font-face{font-family:"Cifras";src:url("fonts/fira-cifras-600.woff2") format("woff2");font-weight:600 900;font-display:swap;unicode-range:U+0030-0039,U+00B0,U+00B1,U+00D7,U+0025}
 @font-face{font-family:"Raleway";src:url("fonts/raleway-400.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Raleway";src:url("fonts/raleway-500.woff2") format("woff2");font-weight:500;font-display:swap}
 @font-face{font-family:"Raleway";src:url("fonts/raleway-600.woff2") format("woff2");font-weight:600;font-display:swap}
 @font-face{font-family:"Raleway";src:url("fonts/raleway-700.woff2") format("woff2");font-weight:700;font-display:swap}
-@font-face{font-family:"Sansation";src:url("fonts/sansation-700.woff2") format("woff2");font-weight:700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Sansation";src:url("fonts/sansation-700-ext.woff2") format("woff2");font-weight:700;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Raleway";src:url("fonts/raleway-800.woff2") format("woff2");font-weight:800;font-display:swap}
 
+/* 8-oct-2026: el look de cost101 es EL look de la suite (Mike: «todas las
+ * plataformas (…) con el diseño look and feel de cost101 pero siguiendo los
+ * parámetros de tipografía y de logo de dash y quell»). En pantalla va siempre
+ * oscuro —el azul de cost101 con vidrio—; al imprimir vuelven los claros de
+ * siempre (abajo, en `@media print`). Los NOMBRES de las variables no
+ * cambiaron; cambia lo que valen. */
 :root{
-  --marca:#0080C1; --marca-2:#3AA3DC; --marca-oscuro:#122733;
-  --fondo:#F3F6F8; --sup:#FFFFFF; --sup-2:#E9EEF2; --linea:#D5DDE3;
-  --tinta:#152028; --tinta-2:#4B5A66; --tinta-3:#7F8C97;
-  --ok:#2E9E6B; --aviso:#C8813A; --alerta:#C9694A;
-  --pista:#DDE5EA;
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --fondo:#0F171D; --sup:#172229; --sup-2:#1F2C35; --linea:#2C3B46;
-    --tinta:#EEF3F6; --tinta-2:#B3C0CA; --tinta-3:#7F919E; --pista:#2A3842;
-    --marca-oscuro:#0B1A24;
-  }
-}
-:root[data-theme="dark"]{
-  --fondo:#0F171D; --sup:#172229; --sup-2:#1F2C35; --linea:#2C3B46;
-  --tinta:#EEF3F6; --tinta-2:#B3C0CA; --tinta-3:#7F919E; --pista:#2A3842;
-  --marca-oscuro:#0B1A24;
+  color-scheme:dark;
+  --marca:#3AA3DC; --marca-2:#86c9ec; --marca-oscuro:#0B1A24;
+  --fondo:rgba(255,255,255,.06); --sup:rgba(255,255,255,.06); --sup-2:rgba(255,255,255,.045); --linea:rgba(255,255,255,.10);
+  --tinta:#e8eef2; --tinta-2:#a9c0ce; --tinta-3:rgba(232,238,242,.55);
+  --ok:#5CC28E; --aviso:#E0A35A; --alerta:#F0A08A;
+  --pista:rgba(255,255,255,.12);
+  --enlace:#86c9ec;
+  --vidrio:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.035));
+  --vidrio-borde:rgba(255,255,255,.13);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--fondo);color:var(--tinta);font-family:"Cifras","Raleway","Segoe UI",Helvetica,Arial,sans-serif;font-variant-numeric:lining-nums;font-size:15px;line-height:1.45}
-h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
 button{font:inherit;cursor:pointer}
 .num{font-variant-numeric:tabular-nums}
 .eyebrow{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);font-weight:600}
 
 /* barra */
 .barra{background:var(--marca);color:#fff;height:56px;display:flex;align-items:center;padding:0 22px;gap:14px}
-.logo{display:flex;align-items:center;gap:10px;font-family:"Sansation","Raleway",sans-serif;font-weight:700;letter-spacing:-.02em;font-size:17px}
-.logo svg{display:block}
+.logo{display:flex;align-items:center;gap:10px}
 .barra .quien{margin-left:auto;font-size:13px;opacity:.92;display:flex;gap:14px;align-items:center;min-width:0}
 .barra .quien span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .barra .quien button{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;padding:5px 11px;font-size:12.5px;font-weight:600;flex-shrink:0}
@@ -150,11 +144,13 @@ button.pieza:hover{color:var(--marca)}
 .plano .hoja{position:relative;background:var(--sup);border:1px solid var(--linea);border-radius:10px;overflow:hidden;line-height:0}
 .plano .hoja img{display:block;width:100%;height:auto}
 .plano .pines{position:absolute;inset:0}
-.pin{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--tinte,#1C3557);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);color:#fff;font:inherit;font-size:8.5px;font-weight:700;line-height:1;padding:0;display:grid;place-items:center;cursor:pointer}
+/* `button.pin`, no `.pin` a secas: el cuadro del código de 6 dígitos también
+   se llama `pin` y desde el 5-oct se encogía a un círculo de 22 px (8-oct). */
+button.pin{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--tinte,#1C3557);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);color:#fff;font:inherit;font-size:8.5px;font-weight:700;line-height:1;padding:0;display:grid;place-items:center;cursor:pointer}
 .pin span{overflow:hidden;max-width:22px;text-overflow:clip;white-space:nowrap}
 .pin.definir{box-shadow:0 0 0 3px var(--aviso),0 1px 4px rgba(0,0,0,.35);animation:latido 1.6s ease-in-out infinite}
 .pin.fuera{opacity:.55;border-style:dashed}
-.pin:hover,.pin:focus-visible{z-index:2;transform:translate(-50%,-50%) scale(1.15);outline:none}
+button.pin:hover,button.pin:focus-visible{z-index:2;transform:translate(-50%,-50%) scale(1.15);outline:none}
 @keyframes latido{0%,100%{box-shadow:0 0 0 3px var(--aviso),0 1px 4px rgba(0,0,0,.35)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--aviso) 45%,transparent),0 1px 4px rgba(0,0,0,.35)}}
 @media (prefers-reduced-motion:reduce){.pin.definir{animation:none}}
 .leyenda-plano{margin:10px 0 4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -265,12 +261,13 @@ footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
 @media (max-width:760px){
   .kpis,.detalle .kpis{grid-template-columns:1fr 1fr}
   .kpi .v{font-size:22px}
+  .kpi.saldo:last-child{grid-column:1/-1}
   .proy{grid-template-columns:1fr 1fr;row-gap:10px}
   .proy .flecha{display:none}
   .punto{grid-template-columns:1fr}
   .punto .flecha{grid-column:1;grid-row:auto;margin-top:4px}
   .pieza .kpis.del-item{grid-template-columns:1fr 1fr}
-  .pin{width:22px;height:22px;font-size:7.5px}
+  button.pin{width:22px;height:22px;font-size:7.5px}
   .doc .rot{min-width:0}
   .wrap{padding:20px 16px 50px}
   .barra{padding:0 16px}
@@ -281,3 +278,79 @@ footer{margin-top:40px;font-size:12px;color:var(--tinta-3);text-align:center}
    botón para recargar cuando la persona termine lo que traía. */
 #aviso-version { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 5000; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; background: #1d1f20; color: #fff; font-size: 13px; line-height: 1.35; box-shadow: 0 8px 24px rgba(0,0,0,.3); max-width: calc(100vw - 32px); }
 #aviso-version button { border: 0; border-radius: 4px; padding: 6px 12px; background: #C6FF3D; color: #1d1f20; font-weight: 700; cursor: pointer; font: inherit; font-weight: 700; white-space: nowrap; }
+
+/* ─────────────── el look de cost101 (8-oct-2026) ───────────────
+ * El fondo es un degradado azul que baja de la luz a la noche; las tarjetas
+ * son vidrio encima; los botones, redondos (el principal en blanco con tinta
+ * oscura); la barra, un vidrio más oscuro. La tipografía no cambia: Cifras +
+ * Raleway, de archivos propios. El logotipo es el oficial, en trazos (sin
+ * fuente adentro), en su versión para fondo oscuro. */
+body{background:#060d13 radial-gradient(130% 70% at 50% -12%,#2a9be0 0%,#0a6aa6 22%,#0b3655 48%,#07141e 72%,#05090d 100%) fixed;min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1{letter-spacing:-.01em}
+a{color:var(--enlace)}
+.barra{background:rgba(5,12,18,.38);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);color:#fff}
+.logo img{display:block;height:28px;width:auto}
+.barra .quien button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 14px}
+.barra .quien button:hover{background:rgba(255,255,255,.14)}
+
+/* los campos: vidrio claro, esquinas de 12 */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;color:inherit}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):hover,select:hover,textarea:hover{border-color:rgba(255,255,255,.3)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--marca);outline-offset:1px;border-color:var(--marca)}
+select option{background:#0f1b24;color:#e8eef2}
+::placeholder{color:rgba(232,238,242,.45)}
+
+/* los botones: redondos; el principal en blanco, el secundario en vidrio */
+.btn{background:#fff;color:#0b1b26;border-radius:999px;font-weight:600}
+.btn:hover{background:#e3f2fb}
+.btn.suave{background:rgba(255,255,255,.07);color:var(--tinta);border:1px solid rgba(255,255,255,.16)}
+.btn.suave:hover{background:rgba(255,255,255,.14)}
+.btn.chico{border-radius:999px}
+.volver{color:var(--enlace)}
+.o-bien::before,.o-bien::after{background:rgba(255,255,255,.12)}
+
+/* el vidrio: los paneles grandes */
+.login form,.kpi,.avance,.tabla,.preguntar-caja,.notas,.plano .hoja,.plano-item{background:var(--vidrio);border:1px solid var(--vidrio-borde);border-radius:20px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+/* y los renglones que se tocan (los que llevan una raya de color a la
+   izquierda conservan su raya: aquí no se toca el borde) */
+.proy,.pieza-fila,.doc{background:var(--vidrio);border-color:var(--vidrio-borde);border-radius:16px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.punto,.duda{background:var(--vidrio);border-radius:16px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.proy:hover,.pieza-fila:hover,.doc:hover{border-color:rgba(255,255,255,.3);background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.05))}
+/* Los indicadores dejan de ser una sola tira partida con rayas de 1 px: cada
+   uno es su tarjeta, como en cost101. */
+.kpis{gap:12px;background:none;border:0;border-radius:0;overflow:visible}
+.kpi.saldo .v{color:var(--marca)}
+.chip{background:rgba(255,255,255,.08)}
+.chip.ok{background:#163527;color:#5CC28E}
+.chip.marca{background:#17323F;color:#86c9ec}
+.chip.aviso{background:#3a2c17;color:#E0A35A}
+/* Bajarlo y las ligas a la obra: botones secundarios, redondos. */
+.btn-bajar,.duda .liga{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:var(--tinta)}
+.btn-bajar:hover,.duda .liga:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.16)}
+.btn-bajar.obra,.duda .liga{color:var(--enlace)}
+.btn-bajar.obra:hover{background:rgba(255,255,255,.14)}
+.planos,.proy .flecha,.punto .flecha,.pieza-fila .flecha{color:var(--enlace)}
+button.pieza:hover{color:var(--enlace)}
+.desglose .total{border-top-color:rgba(255,255,255,.16)}
+.respuesta,form.responder{border-top-color:rgba(255,255,255,.14)}
+
+/* ─────────────── al imprimir ───────────────
+ * El estado de cuenta en papel (o en PDF) vuelve a claro: hoja blanca, tinta
+ * oscura y el azul de la marca de siempre. El vidrio es para la pantalla. */
+@media print{
+  :root{
+    color-scheme:light;
+    --marca:#0080C1; --marca-2:#3AA3DC;
+    --fondo:#fff; --sup:#fff; --sup-2:#F3F6F8; --linea:#D5DDE3;
+    --tinta:#152028; --tinta-2:#4B5A66; --tinta-3:#7F8C97;
+    --ok:#2E9E6B; --aviso:#C8813A; --alerta:#C9694A;
+    --pista:#DDE5EA; --enlace:#0080C1; --vidrio:#fff; --vidrio-borde:#D5DDE3;
+  }
+  body{background:#fff !important;color:var(--tinta)}
+  .login form,.kpi,.avance,.tabla,.preguntar-caja,.notas,.plano .hoja,.plano-item,.proy,.pieza-fila,.doc,.punto,.duda{background:#fff !important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+  .kpi,.avance,.tabla,.proy,.pieza-fila,.doc{border-color:var(--linea)}
+  .chip{background:#E9EEF2;color:#4B5A66}
+  .chip.ok{background:#DFF3E5;color:#1A5C2C}
+  .chip.marca{background:#E4F1F9;color:#0B5C86}
+  .chip.aviso{background:#FBF4E3;color:#7A5200}
+}
