@@ -102,6 +102,12 @@ jobs:
       - name: Qué ofrece la pantalla de entrada
         run: node pruebas/entrada.mjs
 
+      # Las direcciones viejas (workers.dev y, desde el 11-oct, la de
+      # taller101.com) mandan al dominio propio con 301; /s101/* y lo que no
+      # es lectura no se tocan. Sin red: va antes de publicar.
+      - name: Las direcciones viejas mandan al dominio
+        run: node pruebas/dominio.mjs
+
       # El letrero de versión nueva (30-sep-2026): que la página lo cargue,
       # que pida /huella.txt, y que sellar.mjs deje la huella. Sin red.
       - name: El letrero de versión nueva
