@@ -1,6 +1,6 @@
 {
   "name": "peek101",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "El portal del cliente: su proyecto y su estado de cuenta. Un Worker de Cloudflare que sirve un HTML y le habla a suite101-api por dentro.",
   "type": "module",
