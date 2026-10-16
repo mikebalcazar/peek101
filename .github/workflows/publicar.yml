@@ -113,6 +113,10 @@ jobs:
       - name: El letrero de versión nueva
         run: node pruebas/la-version-nueva.mjs
 
+      # 16-oct-2026 · el desglose de una obra no se pinta en otra.
+      - name: El desglose es el de la obra en pantalla
+        run: node pruebas/el-desglose-de-su-obra.mjs
+
       - name: Sellar la portada con este commit
         run: node scripts/sellar.mjs "${{ github.sha }}"
 
