@@ -90,6 +90,16 @@ rev(!/!yo\.tiene_clave\s*\)/.test(js), 'y a quien entró con Google no se le pid
  * sabría por qué. */
 rev(/const v = \$\('clave'\)\.value;/.test(js), 'la contraseña se manda tal cual, sin recortarla');
 
+/* 16-oct-2026 · Al abrir, /yo se pide UNA vez: el que dice si la sesión vive
+ * es el mismo con el que se entra. Antes se pedía dos veces seguidas
+ * (~700 ms cada una en staging). */
+{
+  const arranque = js.slice(js.lastIndexOf('(async () => {'));
+  const veces = (arranque.match(/pedir\('\/yo'\)/g) || []).length;
+  rev(veces === 1, 'al abrir, /yo se pide una sola vez', `${veces}`);
+  rev(/await entrar\(yo\)/.test(arranque), 'y ese mismo /yo es con el que se entra');
+}
+
 // El marcador dice cuántas pasaron, no cuántas fallaron: la primera versión
 // imprimía «FALLAS: 13/15» con 13 buenas, que se lee exactamente al revés.
 console.log(`\n${fallas ? `${fallas} FALLA${fallas > 1 ? 'S' : ''}` : 'todo bien'} · ${revisadas - fallas} de ${revisadas} pasaron\n`);

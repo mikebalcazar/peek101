@@ -307,10 +307,12 @@ $('salir').onclick = async () => {
 
 /* ─────────────── cargar y pintar ─────────────── */
 
-async function entrar() {
+/** `yaVino`: el /yo que se pidió al abrir, para no volver a pedirlo (16-oct-
+ *  2026: se pedía dos veces seguidas al arrancar, ~700 ms cada una). */
+async function entrar(yaVino = null) {
   mostrar('v-cargando');
   try {
-    const yo = await pedir('/yo');
+    const yo = yaVino || await pedir('/yo');
     if (!yo.acceso || yo.acceso.tipo !== 'cliente') throw new ErrorApi('sin_permiso', 403);
     if (!yo.acceso.activo) throw new ErrorApi('sin_permiso', 403);
 
@@ -607,9 +609,9 @@ $('d-pdf').onclick = () => window.print();
       return;
     }
   }
+  let yo;
   try {
-    await pedir('/yo');
-    await entrar();
+    yo = await pedir('/yo');
   } catch {
     /* La cookie no vive: se pide el correo, pero SÓLO si el cliente no se
      * adelantó. Con red lenta, /yo contesta después de que ya tecleó su correo
@@ -618,5 +620,7 @@ $('d-pdf').onclick = () => window.print();
      * del dedo. Medido el 18-sep-2026 desde el sandbox, donde /yo tarda ~700
      * ms; en el runner contesta antes de que nadie teclee y por eso no se veía. */
     if (!correo) mostrar('v-correo');
+    return;
   }
+  await entrar(yo);
 })();
