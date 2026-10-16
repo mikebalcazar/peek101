@@ -1,12 +1,12 @@
 {
   "name": "peek101",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "El portal del cliente: su proyecto y su estado de cuenta. Un Worker de Cloudflare que sirve un HTML y le habla a suite101-api por dentro.",
   "type": "module",
   "scripts": {
     "previo": "wrangler dev --env staging",
-    "prueba": "node pruebas/dominio.mjs && node pruebas/entrada.mjs && node pruebas/el-atras.mjs && node pruebas/la-obra-en-peek.mjs && node pruebas/portal.spec.mjs && node pruebas/la-version-nueva.mjs",
+    "prueba": "node pruebas/dominio.mjs && node pruebas/entrada.mjs && node pruebas/el-atras.mjs && node pruebas/la-obra-en-peek.mjs && node pruebas/portal.spec.mjs && node pruebas/la-version-nueva.mjs && node pruebas/el-desglose-de-su-obra.mjs",
     "medir": "node scripts/medir.mjs"
   },
   "devDependencies": {

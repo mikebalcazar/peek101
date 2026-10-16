@@ -521,12 +521,19 @@ function pintarDetalle(i) {
  * cliente viene a ver, ya están—. Un portal que se queda en blanco porque no
  * pudo pintar el IVA es peor que uno sin IVA.
  */
+/* 16-oct-2026 · Cada desglose lleva su turno. Si el cliente abre una obra y
+ * luego otra antes de que llegue el desglose de la primera, la respuesta
+ * tardía ya no es de la obra en pantalla y NO se pinta: antes ponía el
+ * total, el IVA y el saldo de una obra en la otra. */
+let desgloseVigente = 0;
 async function ponerDesglose(proyecto_id) {
+  const turno = ++desgloseVigente;
   const caja = $('d-desglose');
   caja.hidden = true;
   $('d-generado').textContent = '';
   try {
     const e = await pedir(`/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(proyecto_id)}/estado`);
+    if (turno !== desgloseVigente) return;
     const t = e.totales ?? {};
     // Sin IVA que enseñar —una obra al 0 %— el desglose sobra: tres renglones
     // que dicen el mismo número no aclaran nada.
