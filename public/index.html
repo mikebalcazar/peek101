@@ -177,15 +177,16 @@
   </div>
 
   <div class="desglose" id="d-desglose" hidden>
-    <div class="fila"><span>Subtotal</span><b class="num" id="d-subtotal"></b></div>
-    <div class="fila"><span id="d-iva-et">IVA</span><b class="num" id="d-iva"></b></div>
-    <div class="fila total"><span>Total</span><b class="num" id="d-gran-total"></b></div>
+    <!-- 1.0.4 · todo sin IVA; el IVA cobrado aparte (contrato 0.107.0). -->
+    <div class="fila"><span>Pagado, sin IVA</span><b class="num" id="d-subtotal"></b></div>
+    <div class="fila"><span id="d-iva-et">IVA cobrado, aparte</span><b class="num" id="d-iva"></b></div>
+    <div class="fila total"><span>Saldo, sin IVA</span><b class="num" id="d-gran-total"></b></div>
   </div>
 
   <div class="movs">
     <h3>Pagos recibidos</h3>
     <div class="tabla"><table>
-      <thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Monto</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Sin IVA</th><th class="r">IVA</th></tr></thead>
       <tbody id="d-pagos"></tbody>
     </table></div>
   </div>

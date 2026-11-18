@@ -502,10 +502,14 @@ function pintarDetalle(i) {
   }).join('') : '<tr><td colspan="4" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
   for (const b of $('d-items').querySelectorAll('[data-pieza]')) b.onclick = () => abrirPieza(b.dataset.pieza, b.dataset.obra);
 
+  /* 1.0.4 · SIN IVA (contrato 0.107.0; Mike, 18-nov-2026: «los cobros
+   * (facturas) se contabilizan en el estado de cuenta sin IVA»). Cada pago
+   * dice su cifra sin IVA y su IVA aparte; una API de antes no los manda. */
+  const sinIva = (x) => x.sin_iva ?? x.monto ?? 0;
   $('d-pagos').innerHTML = (pagos.length
-    ? pagos.map((x) => `<tr><td class="fecha">${fecha(x.fecha)}</td><td>${esc(x.descripcion || 'Pago')}</td><td class="r num">${pesos(x.monto)}</td></tr>`).join('')
-    : '<tr><td colspan="3" class="nota">Sin pagos registrados.</td></tr>')
-    + `<tr><td colspan="2"><b>Total pagado</b></td><td class="r num"><b>${pesos(pagos.reduce((s, x) => s + (x.monto ?? 0), 0))}</b></td></tr>`;
+    ? pagos.map((x) => `<tr><td class="fecha">${fecha(x.fecha)}</td><td>${esc(x.descripcion || 'Pago')}</td><td class="r num">${pesos(sinIva(x))}</td><td class="r num">${x.iva ? pesos(x.iva) : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="nota">Sin pagos registrados.</td></tr>')
+    + `<tr><td colspan="2"><b>Total pagado</b></td><td class="r num"><b>${pesos(pagos.reduce((s, x) => s + sinIva(x), 0))}</b></td><td class="r num">${pesos(pagos.reduce((s, x) => s + (x.iva ?? 0), 0))}</td></tr>`;
 
   // La liga del Excel se puede poner enseguida: es la misma dirección
   // siempre. El desglose necesita una vuelta más y llega solo.
@@ -545,15 +549,11 @@ async function ponerDesglose(proyecto_id) {
     if (typeof pintarConceptos === 'function') pintarConceptos(e);
     // 0.105.0 · sin conceptos de cobro no hay precio que desglosar ni saldo.
     if (t.precio_por_cargar || t.saldo == null) return;
-    // Sin IVA que enseñar —una obra al 0 %— el desglose sobra: tres renglones
-    // que dicen el mismo número no aclaran nada.
-    if (!t.iva) return;
-    $('d-subtotal').textContent = pesos2(t.subtotal);
-    $('d-iva-et').textContent = `IVA ${(t.tasa_iva ?? 1600) / 100} %`;
-    $('d-iva').textContent = pesos2(t.iva);
-    $('d-gran-total').textContent = pesos2(t.total);
-    // El total y el saldo son los del documento: con IVA, que es lo que se
-    // paga. Los de arriba venían sin él y decían otra cosa.
+    /* 1.0.4 · SIN IVA (contrato 0.107.0): lo pagado y el saldo sin IVA, y el
+     * IVA que se cobró aparte. Con centavos: el papel se lo suma el cliente. */
+    $('d-subtotal').textContent = pesos2(t.cobrado);
+    $('d-iva').textContent = pesos2(t.iva_cobrado ?? t.iva ?? 0);
+    $('d-gran-total').textContent = pesos2(t.saldo);
     $('d-total').textContent = pesos2(t.total);
     $('d-saldo').textContent = pesos2(t.saldo);
     $('d-generado').textContent = `Generado el ${fechaLarga(new Date(e.generado_at))}`;

@@ -1,5 +1,14 @@
 # peek101 · dónde quedó
 
+## 18-nov-2026 · 1.0.4: el estado de cuenta sin IVA (API 0.107.0)
+
+Mike (recado de dash101): «En los estados de cuenta de los proyectos, siempre
+haz las cuentas sin IVA y desglosa por aparte el IVA que se haya pagado o
+cobrado.» `/peek` ya manda lo cobrado sin IVA; el detalle de la obra enseña
+cada pago sin IVA con su IVA al lado, y el desglose dice «Pagado, sin IVA»,
+«IVA cobrado, aparte» y «Saldo, sin IVA». El KPI «Monto del proyecto» es el
+precio sin IVA. Medido contra staging: portal 134/0, desglose 4/4.
+
 ## 18-nov-2026 · 1.0.3: «Precio por cargar» y lo que se cobra (API 0.105.0)
 
 Mike, 18-nov: «Vamos a separar la contabilidad. Ya no va a ir ligada a los

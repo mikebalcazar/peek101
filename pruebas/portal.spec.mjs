@@ -354,8 +354,9 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   // Las filas de pagos traen una más: el renglón del total.
   const filasPago = await pagina.locator('#d-pagos tr').count();
   rev(filasPago === Math.max(1, pagosDelProyecto.length) + 1, 'una fila por pago, más el total', `${filasPago}`);
-  const sumaPintada = (await pagina.textContent('#d-pagos tr:last-child td:last-child')).trim();
-  rev(sumaPintada === mx(pagosDelProyecto.reduce((s, x) => s + x.monto, 0)), 'el total pagado es la suma de los pagos pintados', sumaPintada);
+  // 1.0.4 · sin IVA: la segunda celda del renglón final; la última es el IVA, aparte.
+  const sumaPintada = (await pagina.textContent('#d-pagos tr:last-child td:nth-child(2)')).trim();
+  rev(sumaPintada === mx(pagosDelProyecto.reduce((s, x) => s + (x.sin_iva ?? x.monto), 0)), 'el total pagado (sin IVA) es la suma de los pagos pintados', sumaPintada);
 
   /* El desglose fiscal y las dos maneras de llevárselo (encargo de Mike del
    * 21-sep). Lo que se mide no es que el bloque aparezca: es que los números
@@ -371,23 +372,24 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
 
   if (estado) {
     const t = estado.totales;
-    rev(t.subtotal + t.iva === t.total, 'subtotal + IVA = total, al centavo',
-        `${t.subtotal} + ${t.iva} = ${t.total}`);
+    // 1.0.4 · contrato 0.107.0: sin IVA; el precio es subtotal y total, y el IVA es el cobrado.
+    rev(t.sin_iva === true && t.subtotal === t.total, 'el precio va sin IVA: subtotal = total',
+        `${t.subtotal} = ${t.total}`);
+    rev(t.saldo === null || t.saldo === t.total - t.cobrado, 'el saldo es precio menos lo pagado, sin IVA', `${t.saldo} = ${t.total} − ${t.cobrado}`);
     const sumaItems = estado.items.reduce((a, i) => a + i.importe, 0);
     rev(sumaItems === t.subtotal, 'la suma de la lista ES el subtotal', `${sumaItems} vs ${t.subtotal}`);
     rev(!JSON.stringify(estado).match(/pagado_prov|compromiso|proveedor/i),
         'y el estado de cuenta no trae nada de proveedores');
 
-    if (t.iva > 0) {
+    if (!t.precio_por_cargar && t.saldo !== null) {
       /* CON CENTAVOS: el resto del portal enseña pesos redondos, pero el
-       * desglose no puede. Con «IVA incluido» el subtotal casi nunca es
-       * redondo y, redondeado, los tres renglones no suman. */
+       * desglose no puede: el papel se lo suma el cliente. */
       const mx2 = (c) => '$' + ((c ?? 0) / 100).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       await pagina.waitForSelector('#d-desglose:not([hidden])', { timeout: 15000 });
-      rev((await pagina.textContent('#d-subtotal')).trim() === mx2(t.subtotal), 'el subtotal pintado es el del servidor, al centavo');
-      rev((await pagina.textContent('#d-iva')).trim() === mx2(t.iva), 'el IVA pintado es el del servidor, al centavo');
-      rev((await pagina.textContent('#d-gran-total')).trim() === mx2(t.total), 'el total pintado es el del servidor, al centavo');
-      rev((await pagina.textContent('#d-total')).trim() === mx2(t.total), 'y el KPI de arriba también trae el total con IVA');
+      rev((await pagina.textContent('#d-subtotal')).trim() === mx2(t.cobrado), 'lo pagado sin IVA es el del servidor, al centavo');
+      rev((await pagina.textContent('#d-iva')).trim() === mx2(t.iva_cobrado), 'el IVA cobrado, aparte, es el del servidor');
+      rev((await pagina.textContent('#d-gran-total')).trim() === mx2(t.saldo), 'el saldo sin IVA es el del servidor');
+      rev((await pagina.textContent('#d-total')).trim() === mx2(t.total), 'y el KPI de arriba trae el precio sin IVA');
       rev(/Generado el/.test(await pagina.textContent('#d-generado')), 'dice el día en que se generó');
     }
 
