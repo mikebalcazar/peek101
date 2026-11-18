@@ -189,7 +189,12 @@ async function staging() {
   linea(`       ${d.proyectos.length} proyecto(s) · ${items} producto(s) · ${d.pagos.length} pago(s)`);
   const suma = (d.proyectos ?? []).reduce((s, p) => s + (p.precio_venta ?? 0), 0);
   rev(d.totales.vendido === suma, 'el total vendido es la suma de los proyectos', `${d.totales.vendido} vs ${suma}`);
-  rev(d.totales.saldo === d.totales.vendido - d.totales.cobrado, 'y el saldo es vendido menos cobrado');
+  /* 0.105.0 · una obra con el precio POR CARGAR no suma a lo vendido ni al
+   * saldo: sin precio no hay saldo. Lo que se le ha cobrado sí sale en
+   * `cobrado`, pero el saldo se resta sólo de las obras con precio. */
+  const cobradoConPrecio = (d.proyectos ?? []).filter((p) => !p.precio_por_cargar).reduce((s, p) => s + (p.cobrado ?? 0), 0);
+  rev(d.totales.saldo === d.totales.vendido - cobradoConPrecio, 'y el saldo es vendido menos cobrado (de las obras con precio)',
+    `${d.totales.saldo} vs ${d.totales.vendido} − ${cobradoConPrecio} · ${d.totales.por_cargar ?? 0} por cargar`);
   for (const prohibido of ['partidas', 'pagado_prov', 'compromiso']) {
     rev(!JSON.stringify(d).includes(prohibido), `/peek no trae «${prohibido}»`);
   }
