@@ -287,7 +287,8 @@ async function correr(navegador, ancho, alto, etiqueta, datos) {
   const conPieza = (p.items ?? []).filter((it) => (it.piezas ?? []).length).length;
   const botonesPieza = await pagina.locator('#d-items button.pieza').count();
   rev(botonesPieza === conPieza, 'cada producto con pieza en el plano abre su pieza aquí', `${botonesPieza} de ${conPieza}`);
-  rev((await pagina.locator('#d-items tr').first().locator('td').count()) === (p.items?.length ? 5 : 1), 'la tabla trae la columna de planos');
+  // 1.0.3 · sin la columna «Monto»: el precio ya no sale de los productos (0.105.0).
+  rev((await pagina.locator('#d-items tr').first().locator('td').count()) === (p.items?.length ? 4 : 1), 'la tabla trae la columna de planos');
 
   /* LA OBRA, ADENTRO (Mike, 5-oct-2026: «Quiero que el único visor del
    * cliente sea Peek y que ahí mismo pueda ver el plano general y aparte
