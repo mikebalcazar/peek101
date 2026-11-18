@@ -151,7 +151,7 @@
 
   <div class="cab"><h2 style="font-size:18px">Productos del proyecto</h2><div class="nota" id="d-items-nota"></div></div>
   <div class="tabla"><table>
-    <thead><tr><th>Producto</th><th>Etapa</th><th>Entrega acordada</th><th>Planos</th><th class="r">Monto</th></tr></thead>
+    <thead><tr><th>Producto</th><th>Etapa</th><th>Entrega acordada</th><th>Planos</th></tr></thead>
     <tbody id="d-items"></tbody>
   </table></div>
   <div class="leyenda">
@@ -165,6 +165,17 @@
        armar el estado de cuenta, así que el papel que él manda y el que
        baja el cliente dicen lo mismo. Si la obra va sin IVA desglosado,
        este bloque no se enseña. -->
+  <!-- Lo que se cobra (contrato 0.105.0): los conceptos de cobro, agrupados
+       por cotización. Desde el 18-nov-2026 el precio de la obra ya no es la
+       suma de los productos de arriba. -->
+  <div class="movs" id="d-conceptos-caja" hidden>
+    <h3>Lo que se cobra</h3>
+    <div class="tabla"><table>
+      <thead><tr><th>Concepto</th><th class="r">Cantidad</th><th class="r">Precio unitario</th><th class="r">Importe</th></tr></thead>
+      <tbody id="d-conceptos"></tbody>
+    </table></div>
+  </div>
+
   <div class="desglose" id="d-desglose" hidden>
     <div class="fila"><span>Subtotal</span><b class="num" id="d-subtotal"></b></div>
     <div class="fila"><span id="d-iva-et">IVA</span><b class="num" id="d-iva"></b></div>

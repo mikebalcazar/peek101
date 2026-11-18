@@ -365,7 +365,11 @@ function pintarGeneral() {
   $('g-fecha').textContent = fechaLarga(new Date());
 
   $('g-total').textContent = pesos(totales.vendido);
-  $('g-total-d').textContent = `${abiertos.length} en proceso · ${P.length - abiertos.length} cerrado${P.length - abiertos.length === 1 ? '' : 's'}`;
+  /* 0.105.0 · un proyecto sin conceptos de cobro tiene el precio por cargar:
+   * no suma al total ni al saldo, y se dice cuántos hay. */
+  const porCargar = Number(totales.por_cargar ?? 0);
+  $('g-total-d').textContent = `${abiertos.length} en proceso · ${P.length - abiertos.length} cerrado${P.length - abiertos.length === 1 ? '' : 's'}`
+    + (porCargar ? ` · ${porCargar} con precio por cargar` : '');
   $('g-pagado').textContent = pesos(totales.cobrado);
   $('g-pagado-d').textContent = totales.vendido ? `${Math.round(totales.cobrado / totales.vendido * 100)} % del total` : '';
   $('g-saldo').textContent = pesos(totales.saldo);
@@ -386,11 +390,13 @@ function pintarGeneral() {
     const saldo = (p.precio_venta ?? 0) - (p.cobrado ?? 0);
     const ent = entregaDe(p);
     const n = p.items?.length ?? 0;
+    const sinPrecio = !!p.precio_por_cargar;
+    const pagadoPct = !sinPrecio && p.precio_venta ? Math.round(p.cobrado / p.precio_venta * 100) : 0;
     return `<button class="proy" data-i="${i}">
       <div><div class="n">${esc(p.nombre)}</div><div class="m">${p.descripcion ? esc(p.descripcion) + ' · ' : ''}${n} producto${n === 1 ? '' : 's'}</div><div style="margin-top:8px"><span class="chip ${c}">${e}</span></div></div>
-      <div><div class="c">Monto</div><div class="val num">${pesos(p.precio_venta)}</div></div>
-      <div><div class="c">Pagado</div><div class="val num">${pesos(p.cobrado)}</div><div class="pista fina" style="margin-top:6px"><i style="width:${p.precio_venta ? Math.min(100, Math.round(p.cobrado / p.precio_venta * 100)) : 0}%"></i></div><div class="pct num">${p.precio_venta ? Math.round(p.cobrado / p.precio_venta * 100) : 0} % pagado</div></div>
-      <div><div class="c">Saldo</div><div class="val num" style="color:var(--marca)">${pesos(saldo)}</div><div class="pct">${ent ? 'entrega ' + fecha(ent.toISOString()) : ''}</div></div>
+      <div><div class="c">Monto</div><div class="val num">${sinPrecio ? 'Por cargar' : pesos(p.precio_venta)}</div></div>
+      <div><div class="c">Pagado</div><div class="val num">${pesos(p.cobrado)}</div><div class="pista fina" style="margin-top:6px"><i style="width:${Math.min(100, pagadoPct)}%"></i></div><div class="pct num">${sinPrecio ? '' : pagadoPct + ' % pagado'}</div></div>
+      <div><div class="c">Saldo</div><div class="val num" style="color:var(--marca)">${sinPrecio ? '—' : pesos(saldo)}</div><div class="pct">${ent ? 'entrega ' + fecha(ent.toISOString()) : ''}</div></div>
       <div class="flecha">Ver →</div>
     </button>`;
   }).join('');
@@ -444,10 +450,10 @@ function pintarDetalle(i) {
   $('d-estado').textContent = e;
   $('d-estado').className = 'chip ' + c;
 
-  $('d-total').textContent = pesos(p.precio_venta);
+  $('d-total').textContent = p.precio_por_cargar ? 'Por cargar' : pesos(p.precio_venta);
   $('d-pagado').textContent = pesos(p.cobrado);
   $('d-pagado-d').textContent = `${pagos.length} pago${pagos.length === 1 ? '' : 's'} recibido${pagos.length === 1 ? '' : 's'}`;
-  $('d-saldo').textContent = pesos(saldo);
+  $('d-saldo').textContent = p.precio_por_cargar ? '—' : pesos(saldo);
   $('d-entrega').textContent = ent ? fecha(ent.toISOString()) : '—';
   $('d-entrega-d').textContent = ent ? (tarde ? 'Fecha acordada vencida' : 'Última entrega acordada') : 'Por definir';
 
@@ -492,9 +498,8 @@ function pintarDetalle(i) {
       <td><div class="etapa"><span class="pasos">${pasos}</span><span${et == null ? ' style="color:var(--tinta-3)"' : ''}>${esc(nombreEtapa(et))}</span></div></td>
       <td class="fecha ${vencida ? 'tarde' : ''}">${fe ? fecha(it.fecha_entrega) : '—'}</td>
       <td>${planos}</td>
-      <td class="r num">${pesos(it.monto)}</td>
     </tr>`;
-  }).join('') : '<tr><td colspan="5" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
+  }).join('') : '<tr><td colspan="4" class="nota">Este proyecto todavía no tiene productos desglosados.</td></tr>';
   for (const b of $('d-items').querySelectorAll('[data-pieza]')) b.onclick = () => abrirPieza(b.dataset.pieza, b.dataset.obra);
 
   $('d-pagos').innerHTML = (pagos.length
@@ -537,6 +542,9 @@ async function ponerDesglose(proyecto_id) {
     const e = await pedir(`/orgs/${encodeURIComponent(ORG)}/proyectos/${encodeURIComponent(proyecto_id)}/estado`);
     if (turno !== desgloseVigente) return;
     const t = e.totales ?? {};
+    if (typeof pintarConceptos === 'function') pintarConceptos(e);
+    // 0.105.0 · sin conceptos de cobro no hay precio que desglosar ni saldo.
+    if (t.precio_por_cargar || t.saldo == null) return;
     // Sin IVA que enseñar —una obra al 0 %— el desglose sobra: tres renglones
     // que dicen el mismo número no aclaran nada.
     if (!t.iva) return;
@@ -553,6 +561,23 @@ async function ponerDesglose(proyecto_id) {
   } catch {
     /* Sin desglose. Lo demás ya está pintado. */
   }
+}
+
+/* Lo que se cobra (contrato 0.105.0, Mike, 18-nov-2026: «Ya no va a ir
+ * ligada a los ítems»): los conceptos de cobro de la obra, agrupados por
+ * cotización, de la misma respuesta de /estado que el desglose. Sin
+ * conceptos el bloque no se enseña. */
+function pintarConceptos(e) {
+  const grupos = e.grupos ?? [];
+  $('d-conceptos-caja').hidden = !grupos.length;
+  if (!grupos.length) { $('d-conceptos').innerHTML = ''; return; }
+  const titulo = (g) => g.cotizacion_id
+    ? `Cotización ${g.numero ?? ''}${g.folio ? ' · ' + g.folio : ''}${g.nombre ? ' · ' + g.nombre : ''}`
+    : (g.nombre || 'Otros conceptos');
+  $('d-conceptos').innerHTML = grupos.map((g) =>
+    ((grupos.length > 1 || g.cotizacion_id) ? `<tr><td colspan="4"><b>${esc(titulo(g))}</b></td></tr>` : '')
+    + (g.conceptos ?? []).map((c) => `<tr><td>${esc(c.descripcion)}</td><td class="r num">${esc(String(c.cantidad))}</td><td class="r num">${pesos2(c.precio_unitario)}</td><td class="r num">${pesos2(c.monto)}</td></tr>`).join('')
+  ).join('');
 }
 
 /* Una liga del correo (los puntos por definir, la invitación) cae en la obra
