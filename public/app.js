@@ -577,7 +577,10 @@ function pintarConceptos(e) {
   $('d-conceptos').innerHTML = grupos.map((g) =>
     ((grupos.length > 1 || g.cotizacion_id) ? `<tr><td colspan="5"><b>${esc(titulo(g))}</b></td></tr>` : '')
     // 1.0.5 · contrato 0.108.0: el producto (`nombre`) en su columna.
-    + (g.conceptos ?? []).map((c) => `<tr><td class="item-n">${esc(c.nombre || '')}</td><td>${esc(c.descripcion || '')}</td><td class="r num">${esc(String(c.cantidad))}</td><td class="r num">${pesos2(c.precio_unitario)}</td><td class="r num">${pesos2(c.monto)}</td></tr>`).join('')
+    // 1.0.6 · contrato 0.109.0: cada sección (N01, MEZZANINE…) con su subtítulo.
+    + (g.conceptos ?? []).map((c, k, todos) => ((c.seccion && c.seccion !== (todos[k - 1]?.seccion ?? ''))
+        ? `<tr class="seccion"><td colspan="5">${esc(c.seccion)}</td></tr>` : '')
+      + `<tr><td class="item-n">${esc(c.nombre || '')}</td><td>${esc(c.descripcion || '')}</td><td class="r num">${esc(String(c.cantidad))}</td><td class="r num">${pesos2(c.precio_unitario)}</td><td class="r num">${pesos2(c.monto)}</td></tr>`).join('')
   ).join('');
 }
 
