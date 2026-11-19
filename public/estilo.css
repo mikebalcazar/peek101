@@ -214,6 +214,9 @@ th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
 td{padding:13px 14px;border-bottom:1px solid var(--linea);vertical-align:middle;font-size:14px}
 tr:last-child td{border-bottom:0}
 td.r,th.r{text-align:right}
+/* 1.0.5 · Las celdas de lo que se cobra se separan con su raya (Mike,
+   18-nov-2026: «quiero celdas que separen las columnas»). */
+table.celdas th,table.celdas td{border:1px solid var(--linea);vertical-align:top}
 .item-n{font-weight:600}
 .item-m{font-size:12px;color:var(--tinta-3)}
 .etapa{display:flex;align-items:center;gap:8px;white-space:nowrap}

@@ -170,8 +170,10 @@
        suma de los productos de arriba. -->
   <div class="movs" id="d-conceptos-caja" hidden>
     <h3>Lo que se cobra</h3>
-    <div class="tabla"><table>
-      <thead><tr><th>Concepto</th><th class="r">Cantidad</th><th class="r">Precio unitario</th><th class="r">Importe</th></tr></thead>
+    <!-- 1.0.5 · el producto aparte de la descripción, como en el PDF, y
+         cada celda con su raya (contrato 0.108.0; Mike, 18-nov-2026). -->
+    <div class="tabla"><table class="celdas">
+      <thead><tr><th>Producto</th><th>Descripción</th><th class="r">Cantidad</th><th class="r">Precio unitario</th><th class="r">Importe</th></tr></thead>
       <tbody id="d-conceptos"></tbody>
     </table></div>
   </div>
